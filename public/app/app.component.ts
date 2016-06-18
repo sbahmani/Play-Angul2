@@ -27,7 +27,7 @@ import {
     directives: [ROUTER_DIRECTIVES],
     providers: [
         ROUTER_PROVIDERS,
-        {provide: LocationStrategy, useClass: HashLocationStrategy},
+        // {provide: LocationStrategy, useClass: HashLocationStrategy},
         HeroService
     ],
     styleUrls: ['app.component.css']
