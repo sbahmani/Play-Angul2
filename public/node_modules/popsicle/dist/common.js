@@ -1,3 +1,4 @@
+"use strict";
 var extend = require('xtend');
 var request_1 = require('./request');
 exports.Request = request_1.default;

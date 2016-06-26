@@ -1,3 +1,4 @@
+"use strict";
 var http_1 = require('http');
 var https_1 = require('https');
 var stream_1 = require('stream');
@@ -25,6 +26,7 @@ function open(request) {
     var maxRedirects = num(options.maxRedirects, 5);
     var followRedirects = options.followRedirects !== false;
     var requestCount = 0;
+    var isStreaming = false;
     var confirmRedirect = typeof options.followRedirects === 'function' ?
         options.followRedirects : falsey;
     function get(url, method, body) {
@@ -44,27 +46,27 @@ function open(request) {
                 arg.ca = options.ca;
                 arg.cert = options.cert;
                 arg.key = options.key;
-                var req = engine(arg);
-                var requestProxy = new stream_1.PassThrough();
-                var responseProxy = new stream_1.PassThrough();
-                requestProxy.on('data', function (chunk) {
-                    request.uploadedBytes = request.uploadedBytes + chunk.length;
+                var rawRequest = engine(arg);
+                var requestStream = new stream_1.PassThrough();
+                var responseStream = new stream_1.PassThrough();
+                requestStream.on('data', function (chunk) {
+                    request.uploadedBytes += chunk.length;
                 });
-                requestProxy.on('end', function () {
+                requestStream.on('end', function () {
                     request.uploadedBytes = request.uploadLength;
                 });
-                responseProxy.on('data', function (chunk) {
-                    request.downloadedBytes = request.downloadedBytes + chunk.length;
+                responseStream.on('data', function (chunk) {
+                    request.downloadedBytes += chunk.length;
                 });
-                responseProxy.on('end', function () {
+                responseStream.on('end', function () {
                     request.downloadedBytes = request.downloadLength;
                 });
-                function response(res) {
-                    var status = res.statusCode;
+                function response(rawResponse) {
+                    var status = rawResponse.statusCode;
                     var redirect = REDIRECT_STATUS[status];
-                    if (followRedirects && redirect != null && res.headers.location) {
-                        var newUrl = urlLib.resolve(url, res.headers.location);
-                        res.resume();
+                    if (followRedirects && redirect != null && rawResponse.headers.location) {
+                        var newUrl = urlLib.resolve(url, rawResponse.headers.location);
+                        rawResponse.resume();
                         request.remove('Cookie');
                         if (redirect === REDIRECT_TYPE.FOLLOW_WITH_GET) {
                             request.set('Content-Length', '0');
@@ -74,45 +76,56 @@ function open(request) {
                             if (arg.method === 'GET' || arg.method === 'HEAD') {
                                 return get(newUrl, method, body);
                             }
-                            if (confirmRedirect(req, res)) {
+                            if (confirmRedirect(rawRequest, rawResponse)) {
                                 return get(newUrl, method, body);
                             }
                         }
                     }
-                    request.downloadLength = num(res.headers['content-length'], 0);
-                    res.pipe(responseProxy);
+                    request.downloadLength = num(rawResponse.headers['content-length'], 0);
+                    isStreaming = true;
+                    rawResponse.pipe(responseStream);
                     return Promise.resolve({
-                        body: responseProxy,
+                        body: responseStream,
                         status: status,
-                        statusText: res.statusMessage,
-                        headers: res.headers,
-                        rawHeaders: res.rawHeaders,
+                        statusText: rawResponse.statusMessage,
+                        headers: rawResponse.headers,
+                        rawHeaders: rawResponse.rawHeaders,
                         url: url
                     });
                 }
-                req.once('response', function (message) {
-                    return resolve(setCookies(request, message).then(function () { return response(message); }));
-                });
-                req.once('abort', function () {
-                    return reject(request.error('Request aborted', 'EABORT'));
-                });
-                req.once('error', function (error) {
-                    return reject(request.error("Unable to connect to \"" + url + "\"", 'EUNAVAILABLE', error));
-                });
-                requestProxy.once('error', reject);
-                request.raw = req;
-                request.uploadLength = num(req.getHeader('content-length'), 0);
-                requestProxy.pipe(req);
-                if (body) {
-                    if (typeof body.pipe === 'function') {
-                        body.pipe(requestProxy);
+                function emitError(error) {
+                    rawRequest.abort();
+                    if (isStreaming) {
+                        responseStream.emit('error', error);
                     }
                     else {
-                        requestProxy.end(body);
+                        reject(error);
+                    }
+                }
+                rawRequest.once('response', function (message) {
+                    resolve(setCookies(request, message).then(function () { return response(message); }));
+                });
+                rawRequest.once('error', function (error) {
+                    emitError(request.error("Unable to connect to \"" + url + "\"", 'EUNAVAILABLE', error));
+                });
+                rawRequest.once('clientAborted', function () {
+                    emitError(request.error('Request aborted', 'EABORT'));
+                });
+                request._raw = rawRequest;
+                request.uploadLength = num(rawRequest.getHeader('content-length'), 0);
+                requestStream.pipe(rawRequest);
+                requestStream.once('error', emitError);
+                if (body) {
+                    if (typeof body.pipe === 'function') {
+                        body.pipe(requestStream);
+                        body.once('error', emitError);
+                    }
+                    else {
+                        requestStream.end(body);
                     }
                 }
                 else {
-                    requestProxy.end();
+                    requestStream.end();
                 }
             });
         });
@@ -121,7 +134,8 @@ function open(request) {
 }
 exports.open = open;
 function abort(request) {
-    request.raw.abort();
+    request._raw.emit('clientAborted');
+    request._raw.abort();
 }
 exports.abort = abort;
 function num(value, fallback) {

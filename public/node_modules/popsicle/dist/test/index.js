@@ -1,3 +1,4 @@
+"use strict";
 var test = require('blue-tape');
 var methods = require('methods');
 var FormData = require('form-data');
@@ -50,7 +51,7 @@ test('create a popsicle#Request instance', function (t) {
 });
 test('use the same response in promise chains', function (t) {
     var req = popsicle.get(REMOTE_URL + '/echo');
-    t.plan(15);
+    t.plan(13);
     return req
         .then(function (res) {
         t.ok(res instanceof popsicle.Response);
@@ -62,9 +63,7 @@ test('use the same response in promise chains', function (t) {
         t.equal(typeof res.name, 'function');
         t.equal(typeof res.type, 'function');
         t.equal(typeof res.statusType, 'function');
-        t.equal(typeof res.error, 'function');
         t.equal(typeof res.toJSON, 'function');
-        t.equal(res.request, req);
         t.deepEqual(Object.keys(req.toJSON()), ['url', 'headers', 'body', 'options', 'timeout', 'method']);
         t.deepEqual(Object.keys(res.toJSON()), ['url', 'headers', 'rawHeaders', 'body', 'status', 'statusText']);
         return req
@@ -75,10 +74,9 @@ test('use the same response in promise chains', function (t) {
 });
 test('clone a request instance', function (t) {
     var req = popsicle.get(REMOTE_URL + '/echo/header/x-example');
-    req.use(function (self) {
-        self.before(function (req) {
-            req.set('X-Example', 'foobar');
-        });
+    req.use(function (self, next) {
+        self.set('X-Example', 'foobar');
+        return next();
     });
     return Promise.all([req, req.clone()])
         .then(function (res) {
@@ -476,10 +474,10 @@ test('response body', function (t) {
         });
     });
     if (!process.browser) {
-        var fs = require('fs');
-        var concat = require('concat-stream');
-        var filename = require('path').join(__dirname, '../../scripts/server.js');
-        var filecontents = fs.readFileSync(filename, 'utf-8');
+        var fs_2 = require('fs');
+        var concat_1 = require('concat-stream');
+        var filename_1 = require('path').join(__dirname, '../../scripts/server.js');
+        var filecontents_1 = fs_2.readFileSync(filename_1, 'utf-8');
         t.test('stream the response body', function (t) {
             return popsicle.request({
                 url: REMOTE_URL + '/json',
@@ -488,7 +486,7 @@ test('response body', function (t) {
                 .then(function (res) {
                 t.equal(typeof res.body, 'object');
                 return new Promise(function (resolve) {
-                    res.body.pipe(concat(function (data) {
+                    res.body.pipe(concat_1(function (data) {
                         t.equal(data.toString(), '{"username":"blakeembrey"}');
                         return resolve();
                     }));
@@ -498,17 +496,17 @@ test('response body', function (t) {
         t.test('pipe streams', function (t) {
             return popsicle.request({
                 url: REMOTE_URL + '/echo',
-                body: fs.createReadStream(filename)
+                body: fs_2.createReadStream(filename_1)
             })
                 .then(function (res) {
-                t.equal(res.body, filecontents);
+                t.equal(res.body, filecontents_1);
             });
         });
         t.test('pipe streams into forms', function (t) {
             return popsicle.request({
                 url: REMOTE_URL + '/echo',
                 body: popsicle.form({
-                    file: fs.createReadStream(filename)
+                    file: fs_2.createReadStream(filename_1)
                 })
             })
                 .then(function (res) {
@@ -518,7 +516,7 @@ test('response body', function (t) {
                     'Content-Disposition: form-data; name="file"; filename="server.js"',
                     'Content-Type: application/javascript',
                     '',
-                    filecontents,
+                    filecontents_1,
                     '--' + boundary + '--'
                 ].join('\r\n'));
             });
@@ -526,24 +524,24 @@ test('response body', function (t) {
         t.test('unzip contents', function (t) {
             return popsicle.request({
                 url: REMOTE_URL + '/echo/zip',
-                body: fs.createReadStream(filename)
+                body: fs_2.createReadStream(filename_1)
             })
                 .then(function (res) {
                 t.equal(res.get('Content-Encoding'), 'deflate');
-                t.equal(res.body, filecontents);
+                t.equal(res.body, filecontents_1);
             });
         });
         t.test('unzip with gzip encoding', function (t) {
             return popsicle.request({
                 url: REMOTE_URL + '/echo/zip',
-                body: fs.createReadStream(filename),
+                body: fs_2.createReadStream(filename_1),
                 headers: {
                     'Accept-Encoding': 'gzip'
                 }
             })
                 .then(function (res) {
                 t.equal(res.get('Content-Encoding'), 'gzip');
-                t.equal(res.body, filecontents);
+                t.equal(res.body, filecontents_1);
             });
         });
     }
@@ -620,8 +618,9 @@ test('plugins', function (t) {
     t.test('modify the request', function (t) {
         var req = popsicle.request(REMOTE_URL + '/echo');
         t.plan(1);
-        req.use(function (self) {
+        req.use(function (self, next) {
             t.equal(self, req);
+            return next();
         });
         return req;
     });
@@ -631,16 +630,17 @@ test('request flow', function (t) {
         t.test('run a function before opening the request', function (t) {
             var req = popsicle.request(REMOTE_URL + '/echo');
             t.plan(2);
-            req.before(function (self) {
+            req.use(function (self, next) {
                 t.equal(self, req);
-                t.notOk(req.response);
+                t.equal(typeof next, 'function');
+                return next();
             });
             return req;
         });
         t.test('fail the request before starting', function (t) {
             var req = popsicle.request(REMOTE_URL + '/echo');
             t.plan(1);
-            req.before(function () {
+            req.use(function () {
                 throw new Error('Hello world!');
             });
             return req
@@ -649,84 +649,38 @@ test('request flow', function (t) {
             });
         });
         t.test('accept a promise to delay the request', function (t) {
-            var req = popsicle.request(REMOTE_URL + '/echo');
-            t.plan(1);
-            req.before(function (self) {
+            var req = popsicle.request({
+                url: REMOTE_URL + '/echo',
+                method: 'POST',
+                body: 'success'
+            });
+            t.plan(2);
+            req.use(function (self, next) {
                 return new Promise(function (resolve) {
                     setTimeout(function () {
                         t.equal(self, req);
                         resolve();
                     }, 10);
-                });
+                }).then(next);
             });
-            return req;
+            return req
+                .then(function (res) {
+                t.equal(res.body, 'success');
+            });
         });
     });
     test('after', function (t) {
         t.test('run after the response', function (t) {
             var req = popsicle.request(REMOTE_URL + '/echo');
-            t.plan(4);
-            req.before(function () {
-                t.notOk(req.response);
-            });
-            req.after(function (response) {
-                t.ok(response instanceof popsicle.Response);
-                t.equal(req.response, response);
-                t.equal(response.request, req);
-            });
-            return req;
-        });
-        t.test('accept a promise', function (t) {
-            var req = popsicle.request(REMOTE_URL + '/echo');
             t.plan(1);
-            req.after(function (response) {
-                return new Promise(function (resolve) {
-                    setTimeout(function () {
-                        t.equal(response, req.response);
-                        resolve();
-                    }, 10);
+            req.use(function (self, next) {
+                return next()
+                    .then(function (res) {
+                    t.ok(res instanceof popsicle.Response);
+                    return res;
                 });
             });
             return req;
-        });
-    });
-    test('always', function (t) {
-        t.test('run all together in order', function (t) {
-            var req = popsicle.request(REMOTE_URL + '/echo');
-            var before = false;
-            var after = false;
-            var always = false;
-            t.plan(6);
-            req.before(function () {
-                before = true;
-                t.notOk(after);
-                t.notOk(always);
-            });
-            req.after(function () {
-                after = true;
-                t.ok(before);
-                t.notOk(always);
-            });
-            req.always(function (request) {
-                always = true;
-                t.ok(before);
-                t.ok(after);
-            });
-            return req;
-        });
-        t.test('run on error', function (t) {
-            var req = popsicle.request(REMOTE_URL + '/echo');
-            t.plan(2);
-            req.before(function () {
-                throw new Error('Testing');
-            });
-            req.always(function (self) {
-                t.equal(self, req);
-            });
-            return req
-                .catch(function (err) {
-                t.equal(err.message, 'Testing');
-            });
         });
     });
 });

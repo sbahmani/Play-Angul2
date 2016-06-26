@@ -1,3 +1,4 @@
+"use strict";
 var popsicle_1 = require('popsicle');
 var url_1 = require('url');
 var test = require('blue-tape');

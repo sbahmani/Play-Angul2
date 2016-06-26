@@ -1,11 +1,13 @@
+"use strict";
 var url_1 = require('url');
 var HttpProxyAgent = require('http-proxy-agent');
 var HttpsProxyAgent = require('https-proxy-agent');
 function proxy(options) {
     if (options === void 0) { options = {}; }
     var getProxyAgent = createGetProxyAgent(options);
-    return function (request) {
+    return function (request, next) {
         request.options.agent = getProxyAgent(request.Url);
+        return next();
     };
 }
 function createGetProxyAgent(options) {
@@ -22,10 +24,10 @@ function createGetProxyAgent(options) {
         if (noProxy && urlInNoProxy(url, noProxyList)) {
             return;
         }
-        if (url.protocol === 'https:' && httpsProxy != null) {
+        if (url.protocol === 'https:' && httpsProxyUrl) {
             return new HttpsProxyAgent(httpsProxyUrl);
         }
-        return httpProxy ? new HttpProxyAgent(httpProxyUrl) : undefined;
+        return httpProxyUrl ? new HttpProxyAgent(httpProxyUrl) : undefined;
     };
 }
 function formatHostname(hostname) {

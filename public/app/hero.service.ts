@@ -2,12 +2,9 @@ import {Injectable} from "@angular/core";
 import {Headers, Http} from "@angular/http";
 import "rxjs/add/operator/toPromise";
 import {Hero} from "./hero";
-
 @Injectable()
 export class HeroService {
-
     private heroesUrl = 'app/heroes';  // URL to web api
-
     constructor(private http:Http) {
     }
 
@@ -33,9 +30,7 @@ export class HeroService {
     delete(hero:Hero) {
         let headers = new Headers();
         headers.append('Content-Type', 'application/json');
-
         let url = `${this.heroesUrl}/${hero.id}`;
-
         return this.http
             .delete(url, headers)
             .toPromise()
@@ -47,7 +42,6 @@ export class HeroService {
         let headers = new Headers({
             'Content-Type': 'application/json'
         });
-
         return this.http
             .post(this.heroesUrl, JSON.stringify(hero), {headers: headers})
             .toPromise()
@@ -59,9 +53,7 @@ export class HeroService {
     private put(hero:Hero) {
         let headers = new Headers();
         headers.append('Content-Type', 'application/json');
-
         let url = `${this.heroesUrl}/${hero.id}`;
-
         return this.http
             .put(url, JSON.stringify(hero), {headers: headers})
             .toPromise()

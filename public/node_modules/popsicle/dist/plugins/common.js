@@ -1,44 +1,31 @@
+"use strict";
 var Promise = require('any-promise');
 var FormData = require('form-data');
 var querystring_1 = require('querystring');
+var index_1 = require('./is-host/index');
 var form_1 = require('../form');
 var JSON_MIME_REGEXP = /^application\/(?:[\w!#\$%&\*`\-\.\^~]*\+)?json$/i;
 var QUERY_MIME_REGEXP = /^application\/x-www-form-urlencoded$/i;
 var FORM_MIME_REGEXP = /^multipart\/form-data$/i;
-var isHostObject;
-if (process.browser) {
-    isHostObject = function (object) {
-        var str = Object.prototype.toString.call(object);
-        switch (str) {
-            case '[object File]':
-            case '[object Blob]':
-            case '[object FormData]':
-            case '[object ArrayBuffer]':
-                return true;
-            default:
-                return false;
-        }
-    };
+function wrap(value) {
+    return function () { return value; };
 }
-else {
-    isHostObject = function (object) {
-        return typeof object.pipe === 'function' || Buffer.isBuffer(object);
-    };
-}
-function defaultHeaders(request) {
+exports.wrap = wrap;
+exports.headers = wrap(function (request, next) {
     if (!request.get('Accept')) {
         request.set('Accept', '*/*');
     }
     request.remove('Host');
-}
-function stringifyRequest(request) {
+    return next();
+});
+exports.stringify = wrap(function (request, next) {
     var body = request.body;
     if (Object(body) !== body) {
         request.body = body == null ? null : String(body);
-        return;
+        return next();
     }
-    if (isHostObject(body)) {
-        return;
+    if (index_1.default(body)) {
+        return next();
     }
     var type = request.type();
     if (!type) {
@@ -62,45 +49,32 @@ function stringifyRequest(request) {
     if (request.body instanceof FormData) {
         request.remove('Content-Type');
     }
-}
-function parseResponse(response) {
-    var body = response.body;
-    if (typeof body !== 'string') {
-        return;
-    }
-    if (body === '') {
-        response.body = null;
-        return;
-    }
-    var type = response.type();
-    try {
-        if (JSON_MIME_REGEXP.test(type)) {
-            response.body = body === '' ? null : JSON.parse(body);
+    return next();
+});
+exports.parse = wrap(function (request, next) {
+    return next()
+        .then(function (response) {
+        var body = response.body;
+        if (typeof body !== 'string') {
+            return response;
         }
-        else if (QUERY_MIME_REGEXP.test(type)) {
-            response.body = querystring_1.parse(body);
+        if (body === '') {
+            response.body = null;
+            return response;
         }
-    }
-    catch (err) {
-        return Promise.reject(response.error('Unable to parse response body: ' + err.message, 'EPARSE', err));
-    }
-}
-function headers() {
-    return function (request) {
-        request.before(defaultHeaders);
-    };
-}
-exports.headers = headers;
-function stringify() {
-    return function (request) {
-        request.before(stringifyRequest);
-    };
-}
-exports.stringify = stringify;
-function parse() {
-    return function (request) {
-        request.after(parseResponse);
-    };
-}
-exports.parse = parse;
+        var type = response.type();
+        try {
+            if (JSON_MIME_REGEXP.test(type)) {
+                response.body = body === '' ? null : JSON.parse(body);
+            }
+            else if (QUERY_MIME_REGEXP.test(type)) {
+                response.body = querystring_1.parse(body);
+            }
+        }
+        catch (err) {
+            return Promise.reject(request.error('Unable to parse response body: ' + err.message, 'EPARSE', err));
+        }
+        return response;
+    });
+});
 //# sourceMappingURL=common.js.map

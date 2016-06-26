@@ -9,10 +9,7 @@ export interface DefaultsOptions extends BaseOptions {
     body?: any;
     options?: any;
     use?: Middleware[];
-    before?: RequestPluginFunction[];
-    after?: ResponsePluginFunction[];
-    always?: RequestPluginFunction[];
-    progress?: RequestPluginFunction[];
+    progress?: ProgressFunction[];
     transport?: TransportOptions;
 }
 export interface RequestOptions extends DefaultsOptions {
@@ -31,9 +28,8 @@ export interface TransportOptions {
     abort?: AbortHandler;
     use?: Middleware[];
 }
-export declare type Middleware = (request?: Request) => any;
-export declare type RequestPluginFunction = (request?: Request) => any;
-export declare type ResponsePluginFunction = (response?: Response) => any;
+export declare type Middleware = (request: Request, next: () => Promise<Response>) => Response | Promise<Response>;
+export declare type ProgressFunction = (request: Request) => any;
 export declare type OpenHandler = (request: Request) => Promise<ResponseOptions>;
 export declare type AbortHandler = (request: Request) => any;
 export default class Request extends Base implements Promise<Response> {
@@ -41,25 +37,20 @@ export default class Request extends Base implements Promise<Response> {
     timeout: number;
     body: any;
     options: any;
-    response: Response;
-    raw: any;
-    errored: PopsicleError;
     transport: TransportOptions;
-    aborted: boolean;
-    timedout: boolean;
+    middleware: Middleware[];
     opened: boolean;
-    started: boolean;
+    aborted: boolean;
     uploadLength: number;
     downloadLength: number;
     private _uploadedBytes;
     private _downloadedBytes;
+    _raw: any;
+    _progress: ProgressFunction[];
     private _promise;
-    private _before;
-    private _after;
-    private _always;
-    private _progress;
+    private _resolve;
+    private _reject;
     constructor(options: RequestOptions);
-    use(fn: Middleware | Middleware[]): this;
     error(message: string, code: string, original?: Error): PopsicleError;
     then(onFulfilled: (response?: Response) => any, onRejected?: (error?: PopsicleError) => any): Promise<any>;
     catch(onRejected: (error?: PopsicleError) => any): Promise<any>;
@@ -67,11 +58,11 @@ export default class Request extends Base implements Promise<Response> {
     toOptions(): RequestOptions;
     toJSON(): RequestJSON;
     clone(): Request;
-    progress(fn: RequestPluginFunction | RequestPluginFunction[]): Request;
-    before(fn: RequestPluginFunction | RequestPluginFunction[]): Request;
-    after(fn: ResponsePluginFunction | ResponsePluginFunction[]): Request;
-    always(fn: RequestPluginFunction | RequestPluginFunction[]): Request;
+    use(fns: Middleware | Middleware[]): this;
+    progress(fns: ProgressFunction | ProgressFunction[]): this;
     abort(): this;
+    private _emit();
+    private _handle();
     uploaded: number;
     downloaded: number;
     completed: number;
