@@ -4,6 +4,7 @@
 
 # An example controller showing a sample home page
 GET        /                    controllers.HomeController.index
+GET        /heroes              controllers.HeroRest.getHeroes
 
 
 # Map static resources from the /public folder to the /assets URL path

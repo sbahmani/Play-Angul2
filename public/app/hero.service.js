@@ -14,12 +14,15 @@ require("rxjs/add/operator/toPromise");
 var HeroService = (function () {
     function HeroService(http) {
         this.http = http;
-        this.heroesUrl = 'app/heroes'; // URL to web api
+        this.heroesUrl = '/heroes'; // URL to web api
     }
     HeroService.prototype.getHeroes = function () {
         return this.http.get(this.heroesUrl)
             .toPromise()
-            .then(function (response) { return response.json().data; })
+            .then(function (response) {
+            console.info(response.json());
+            return response.json();
+        })
             .catch(this.handleError);
     };
     HeroService.prototype.getHero = function (id) {
