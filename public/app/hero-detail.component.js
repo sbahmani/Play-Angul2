@@ -45,6 +45,7 @@ var HeroDetailComponent = (function () {
     HeroDetailComponent.prototype.goBack = function (savedHero) {
         if (savedHero === void 0) { savedHero = null; }
         this.close.emit(savedHero);
+        console.log("close evt" + JSON.stringify(savedHero));
         if (this.navigated) {
             window.history.back();
         }

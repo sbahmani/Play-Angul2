@@ -1,16 +1,13 @@
 /**
  * Created by sjb on 6/16/16.
  */
-import {Component}       from '@angular/core';
-import {HeroService}     from './hero.service';
-import {HeroesComponent}   from './heroes.component'
-import {DashboardComponent}   from './dashboard.component'
-import {HeroDetailComponent}   from './hero-detail.component'
-import {RouteConfig, ROUTER_DIRECTIVES, ROUTER_PROVIDERS} from '@angular/router-deprecated';
-import {
-    LocationStrategy,
-    HashLocationStrategy
-} from '@angular/common';
+import {Component} from "@angular/core";
+import {HeroService} from "./hero.service";
+import {HeroesComponent} from "./heroes.component";
+import {DashboardComponent} from "./dashboard.component";
+import {HeroDetailComponent} from "./hero-detail.component";
+import {RouteConfig, ROUTER_DIRECTIVES, ROUTER_PROVIDERS} from "@angular/router-deprecated";
+import {LocationStrategy, HashLocationStrategy} from "@angular/common";
 
 
 @Component({
@@ -27,7 +24,7 @@ import {
     directives: [ROUTER_DIRECTIVES],
     providers: [
         ROUTER_PROVIDERS,
-        // {provide: LocationStrategy, useClass: HashLocationStrategy},
+        {provide: LocationStrategy, useClass: HashLocationStrategy},
         HeroService
     ],
     styleUrls: ['app.component.css']

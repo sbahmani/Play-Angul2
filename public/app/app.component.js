@@ -11,12 +11,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 /**
  * Created by sjb on 6/16/16.
  */
-var core_1 = require('@angular/core');
-var hero_service_1 = require('./hero.service');
-var heroes_component_1 = require('./heroes.component');
-var dashboard_component_1 = require('./dashboard.component');
-var hero_detail_component_1 = require('./hero-detail.component');
-var router_deprecated_1 = require('@angular/router-deprecated');
+var core_1 = require("@angular/core");
+var hero_service_1 = require("./hero.service");
+var heroes_component_1 = require("./heroes.component");
+var dashboard_component_1 = require("./dashboard.component");
+var hero_detail_component_1 = require("./hero-detail.component");
+var router_deprecated_1 = require("@angular/router-deprecated");
+var common_1 = require("@angular/common");
 var AppComponent = (function () {
     function AppComponent() {
         this.title = 'Tour of Heroes';
@@ -29,7 +30,7 @@ var AppComponent = (function () {
             directives: [router_deprecated_1.ROUTER_DIRECTIVES],
             providers: [
                 router_deprecated_1.ROUTER_PROVIDERS,
-                // {provide: LocationStrategy, useClass: HashLocationStrategy},
+                { provide: common_1.LocationStrategy, useClass: common_1.HashLocationStrategy },
                 hero_service_1.HeroService
             ],
             styleUrls: ['app.component.css']
