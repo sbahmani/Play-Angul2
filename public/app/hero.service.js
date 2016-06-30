@@ -52,7 +52,7 @@ var HeroService = (function () {
         return this.http
             .post(this.heroesUrl, JSON.stringify(hero), { headers: headers })
             .toPromise()
-            .then(function (res) { return res.json().data; })
+            .then(function (res) { return res.json(); })
             .catch(this.handleError);
     };
     // Update existing Hero
@@ -63,7 +63,7 @@ var HeroService = (function () {
         return this.http
             .put(url, JSON.stringify(hero), { headers: headers })
             .toPromise()
-            .then(function () { return hero; })
+            .then(function (res) { return res.json(); })
             .catch(this.handleError);
     };
     HeroService.prototype.handleError = function (error) {

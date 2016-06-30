@@ -3,9 +3,12 @@
 # ~~~~
 
 # An example controller showing a sample home page
-GET        /                    controllers.HomeController.index
-GET        /heroes              controllers.HeroRest.getHeroes
+GET           /                    controllers.HomeController.index
+GET           /heroes              controllers.HeroRest.getHeroes
+PUT           /heroes/:id          controllers.HeroRest.editHeroes(id:String)
+DELETE        /heroes/:id          controllers.HeroRest.deleteHeroes(id:Integer)
+POST          /heroes              controllers.HeroRest.addHeroes
 
 
 # Map static resources from the /public folder to the /assets URL path
-GET        /assets/*file        controllers.Assets.at(path="/public", file)
+GET           /assets/*file        controllers.Assets.at(path="/public", file)
