@@ -10,7 +10,8 @@ We integrate these two platform(Angular2 as frontend and Play! for backend)
 * Angular : 2.0.0-rc.3
 
 ## Installation and Run
-use [Activator](https://www.lightbend.com/activator/download) for build Play Framework app and just `activator run`
+* install nodejs (https://docs.npmjs.com/getting-started/installing-node)
+* use [Activator](https://www.lightbend.com/activator/download) for build Play Framework app and just `activator run`
 
 ## REST Services
 Use angular2-in-memory-web-api for mock REST (https://angular.io/docs/ts/latest/tutorial/toh-pt6.html)
