@@ -9,28 +9,33 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require("@angular/core");
-var router_deprecated_1 = require("@angular/router-deprecated");
+var router_1 = require("@angular/router");
 var hero_1 = require("./hero");
 var hero_service_1 = require("./hero.service");
 var HeroDetailComponent = (function () {
-    function HeroDetailComponent(heroService, routeParams) {
+    function HeroDetailComponent(heroService, route) {
         this.heroService = heroService;
-        this.routeParams = routeParams;
+        this.route = route;
         this.close = new core_1.EventEmitter();
         this.navigated = false; // true if navigated here
     }
     HeroDetailComponent.prototype.ngOnInit = function () {
         var _this = this;
-        if (this.routeParams.get('id') !== null) {
-            var id = +this.routeParams.get('id');
-            this.navigated = true;
-            this.heroService.getHero(id)
-                .then(function (hero) { return _this.hero = hero; });
-        }
-        else {
-            this.navigated = false;
-            this.hero = new hero_1.Hero();
-        }
+        this.sub = this.route.params.subscribe(function (params) {
+            if (params['id'] !== undefined) {
+                var id = +params['id'];
+                _this.navigated = true;
+                _this.heroService.getHero(id)
+                    .then(function (hero) { return _this.hero = hero; });
+            }
+            else {
+                _this.navigated = false;
+                _this.hero = new hero_1.Hero();
+            }
+        });
+    };
+    HeroDetailComponent.prototype.ngOnDestroy = function () {
+        this.sub.unsubscribe();
     };
     HeroDetailComponent.prototype.save = function () {
         var _this = this;
@@ -65,7 +70,7 @@ var HeroDetailComponent = (function () {
             templateUrl: 'hero-detail.component.html',
             styleUrls: ['hero-detail.component.css']
         }), 
-        __metadata('design:paramtypes', [hero_service_1.HeroService, router_deprecated_1.RouteParams])
+        __metadata('design:paramtypes', [hero_service_1.HeroService, router_1.ActivatedRoute])
     ], HeroDetailComponent);
     return HeroDetailComponent;
 }());

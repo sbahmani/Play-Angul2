@@ -13,11 +13,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
  */
 var core_1 = require("@angular/core");
 var hero_service_1 = require("./hero.service");
-var heroes_component_1 = require("./heroes.component");
-var dashboard_component_1 = require("./dashboard.component");
-var hero_detail_component_1 = require("./hero-detail.component");
-var router_deprecated_1 = require("@angular/router-deprecated");
-var common_1 = require("@angular/common");
+var router_1 = require("@angular/router");
 var AppComponent = (function () {
     function AppComponent() {
         this.title = 'Tour of Heroes';
@@ -26,32 +22,13 @@ var AppComponent = (function () {
         core_1.Component({
             selector: 'my-app',
             moduleId: module.id,
-            template: "\n     <h1>{{title}}</h1>\n  <nav>\n    <a [routerLink]=\"['Dashboard']\">Dashboard</a>\n    <a [routerLink]=\"['Heroes']\">Heroes</a>\n  </nav>\n  <router-outlet></router-outlet>\n",
-            directives: [router_deprecated_1.ROUTER_DIRECTIVES],
+            template: "\n     <h1>{{title}}</h1>\n  <nav>\n      <a [routerLink]=\"['/dashboard']\" routerLinkActive=\"active\">Dashboard</a>\n      <a [routerLink]=\"['/heroes']\" routerLinkActive=\"active\">Heroes</a>\n  </nav>\n  <router-outlet></router-outlet>\n",
+            directives: [router_1.ROUTER_DIRECTIVES],
             providers: [
-                router_deprecated_1.ROUTER_PROVIDERS,
-                { provide: common_1.LocationStrategy, useClass: common_1.HashLocationStrategy },
                 hero_service_1.HeroService
             ],
             styleUrls: ['app.component.css']
-        }),
-        router_deprecated_1.RouteConfig([
-            {
-                path: '/detail/:id',
-                name: 'HeroDetail',
-                component: hero_detail_component_1.HeroDetailComponent
-            },
-            {
-                path: '/heroes',
-                name: 'Heroes',
-                component: heroes_component_1.HeroesComponent
-            }, {
-                path: '/dashboard',
-                name: 'Dashboard',
-                component: dashboard_component_1.DashboardComponent,
-                useAsDefault: true
-            }
-        ]), 
+        }), 
         __metadata('design:paramtypes', [])
     ], AppComponent);
     return AppComponent;

@@ -1,5 +1,5 @@
 import {Component, OnInit} from "@angular/core";
-import {Router} from "@angular/router-deprecated";
+import { Router }            from '@angular/router';
 import {Hero} from "./hero";
 import {HeroService} from "./hero.service";
 import {HeroDetailComponent} from "./hero-detail.component";
@@ -64,6 +64,6 @@ export class HeroesComponent implements OnInit {
     }
 
     gotoDetail() {
-        this.router.navigate(['HeroDetail', {id: this.selectedHero.id}]);
+        this.router.navigate(['/detail', this.selectedHero.id]);
     }
 }

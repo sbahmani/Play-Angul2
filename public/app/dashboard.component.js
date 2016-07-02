@@ -11,9 +11,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 /**
  * Created by sjb on 6/16/16.
  */
-var core_1 = require('@angular/core');
-var router_deprecated_1 = require('@angular/router-deprecated');
-var hero_service_1 = require('./hero.service');
+var core_1 = require("@angular/core");
+var router_1 = require("@angular/router");
+var hero_service_1 = require("./hero.service");
 var DashboardComponent = (function () {
     function DashboardComponent(router, heroService) {
         this.router = router;
@@ -27,7 +27,7 @@ var DashboardComponent = (function () {
             .then(function (heroes) { return _this.heroes = heroes.slice(1, 5); });
     };
     DashboardComponent.prototype.gotoDetail = function (hero) {
-        var link = ['HeroDetail', { id: hero.id }];
+        var link = ['/detail', hero.id];
         this.router.navigate(link);
     };
     DashboardComponent = __decorate([
@@ -37,7 +37,7 @@ var DashboardComponent = (function () {
             styleUrls: ['dashboard.component.css'],
             moduleId: module.id
         }), 
-        __metadata('design:paramtypes', [router_deprecated_1.Router, hero_service_1.HeroService])
+        __metadata('design:paramtypes', [router_1.Router, hero_service_1.HeroService])
     ], DashboardComponent);
     return DashboardComponent;
 }());

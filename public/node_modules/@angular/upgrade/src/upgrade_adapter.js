@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 "use strict";
 var core_1 = require('@angular/core');
 var platform_browser_1 = require('@angular/platform-browser');
@@ -77,6 +84,8 @@ var upgradeCount = 0;
  *       "ng2[ng1[Hello World!](transclude)](project)");
  * });
  * ```
+ *
+ * @experimental
  */
 var UpgradeAdapter = (function () {
     function UpgradeAdapter() {
@@ -539,6 +548,8 @@ function ng1ComponentDirective(info, idPrefix) {
 }
 /**
  * Use `UgradeAdapterRef` to control a hybrid AngularJS v1 / Angular v2 application.
+ *
+ * @experimental
  */
 var UpgradeAdapterRef = (function () {
     function UpgradeAdapterRef() {
