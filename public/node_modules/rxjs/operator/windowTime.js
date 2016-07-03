@@ -131,7 +131,6 @@ var WindowTimeSubscriber = (function (_super) {
         var window = new Subject_1.Subject();
         this.windows.push(window);
         var destination = this.destination;
-        destination.add(window);
         destination.next(window);
         return window;
     };

@@ -5,8 +5,6 @@ export declare type TeardownLogic = AnonymousSubscription | Function | void;
 export interface ISubscription extends AnonymousSubscription {
     unsubscribe(): void;
     isUnsubscribed: boolean;
-    add(teardown: TeardownLogic): ISubscription;
-    remove(sub: ISubscription): void;
 }
 /**
  * Represents a disposable resource, such as the execution of an Observable. A

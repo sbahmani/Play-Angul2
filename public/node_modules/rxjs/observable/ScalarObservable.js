@@ -17,6 +17,9 @@ var ScalarObservable = (function (_super) {
         this.value = value;
         this.scheduler = scheduler;
         this._isScalar = true;
+        if (scheduler) {
+            this._isScalar = false;
+        }
     }
     ScalarObservable.create = function (value, scheduler) {
         return new ScalarObservable(value, scheduler);

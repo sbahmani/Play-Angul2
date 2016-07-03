@@ -17,8 +17,8 @@ var BehaviorSubject = (function (_super) {
         this._value = _value;
     }
     BehaviorSubject.prototype.getValue = function () {
-        if (this.hasErrored) {
-            throwError_1.throwError(this.errorValue);
+        if (this.hasError) {
+            throwError_1.throwError(this.thrownError);
         }
         else if (this.isUnsubscribed) {
             throwError_1.throwError(new ObjectUnsubscribedError_1.ObjectUnsubscribedError());
@@ -41,12 +41,8 @@ var BehaviorSubject = (function (_super) {
         }
         return subscription;
     };
-    BehaviorSubject.prototype._next = function (value) {
-        _super.prototype._next.call(this, this._value = value);
-    };
-    BehaviorSubject.prototype._error = function (err) {
-        this.hasErrored = true;
-        _super.prototype._error.call(this, this.errorValue = err);
+    BehaviorSubject.prototype.next = function (value) {
+        _super.prototype.next.call(this, this._value = value);
     };
     return BehaviorSubject;
 }(Subject_1.Subject));

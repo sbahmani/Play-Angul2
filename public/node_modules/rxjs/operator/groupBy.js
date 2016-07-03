@@ -55,15 +55,13 @@ var GroupByOperator = (function () {
 var GroupBySubscriber = (function (_super) {
     __extends(GroupBySubscriber, _super);
     function GroupBySubscriber(destination, keySelector, elementSelector, durationSelector) {
-        _super.call(this);
+        _super.call(this, destination);
         this.keySelector = keySelector;
         this.elementSelector = elementSelector;
         this.durationSelector = durationSelector;
         this.groups = null;
         this.attemptedToUnsubscribe = false;
         this.count = 0;
-        this.destination = destination;
-        this.add(destination);
     }
     GroupBySubscriber.prototype._next = function (value) {
         var key;
@@ -82,46 +80,36 @@ var GroupBySubscriber = (function (_super) {
             groups = this.groups = typeof key === 'string' ? new FastMap_1.FastMap() : new Map_1.Map();
         }
         var group = groups.get(key);
+        var element;
+        if (this.elementSelector) {
+            try {
+                element = this.elementSelector(value);
+            }
+            catch (err) {
+                this.error(err);
+            }
+        }
+        else {
+            element = value;
+        }
         if (!group) {
             groups.set(key, group = new Subject_1.Subject());
             var groupedObservable = new GroupedObservable(key, group, this);
-            if (this.durationSelector) {
-                this._selectDuration(key, group);
-            }
             this.destination.next(groupedObservable);
+            if (this.durationSelector) {
+                var duration = void 0;
+                try {
+                    duration = this.durationSelector(new GroupedObservable(key, group));
+                }
+                catch (err) {
+                    this.error(err);
+                    return;
+                }
+                this.add(duration.subscribe(new GroupDurationSubscriber(key, group, this)));
+            }
         }
-        if (this.elementSelector) {
-            this._selectElement(value, group);
-        }
-        else {
-            this.tryGroupNext(value, group);
-        }
-    };
-    GroupBySubscriber.prototype._selectElement = function (value, group) {
-        var result;
-        try {
-            result = this.elementSelector(value);
-        }
-        catch (err) {
-            this.error(err);
-            return;
-        }
-        this.tryGroupNext(result, group);
-    };
-    GroupBySubscriber.prototype._selectDuration = function (key, group) {
-        var duration;
-        try {
-            duration = this.durationSelector(new GroupedObservable(key, group));
-        }
-        catch (err) {
-            this.error(err);
-            return;
-        }
-        this.add(duration.subscribe(new GroupDurationSubscriber(key, group, this)));
-    };
-    GroupBySubscriber.prototype.tryGroupNext = function (value, group) {
         if (!group.isUnsubscribed) {
-            group.next(value);
+            group.next(element);
         }
     };
     GroupBySubscriber.prototype._error = function (err) {
@@ -171,22 +159,16 @@ var GroupDurationSubscriber = (function (_super) {
         this.parent = parent;
     }
     GroupDurationSubscriber.prototype._next = function (value) {
-        this.tryComplete();
+        this._complete();
     };
     GroupDurationSubscriber.prototype._error = function (err) {
-        this.tryError(err);
-    };
-    GroupDurationSubscriber.prototype._complete = function () {
-        this.tryComplete();
-    };
-    GroupDurationSubscriber.prototype.tryError = function (err) {
         var group = this.group;
         if (!group.isUnsubscribed) {
             group.error(err);
         }
         this.parent.removeGroup(this.key);
     };
-    GroupDurationSubscriber.prototype.tryComplete = function () {
+    GroupDurationSubscriber.prototype._complete = function () {
         var group = this.group;
         if (!group.isUnsubscribed) {
             group.complete();

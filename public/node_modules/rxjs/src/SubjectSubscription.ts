@@ -7,10 +7,10 @@ import {Subscription} from './Subscription';
  * @ignore
  * @extends {Ignored}
  */
-export class SubjectSubscription extends Subscription {
+export class SubjectSubscription<T> extends Subscription {
   isUnsubscribed: boolean = false;
 
-  constructor(public subject: Subject<any>, public observer: Observer<any>) {
+  constructor(public subject: Subject<T>, public subscriber: Observer<T>) {
     super();
   }
 
@@ -26,11 +26,11 @@ export class SubjectSubscription extends Subscription {
 
     this.subject = null;
 
-    if (!observers || observers.length === 0 || subject.isUnsubscribed) {
+    if (!observers || observers.length === 0 || subject.isStopped || subject.isUnsubscribed) {
       return;
     }
 
-    const subscriberIndex = observers.indexOf(this.observer);
+    const subscriberIndex = observers.indexOf(this.subscriber);
 
     if (subscriberIndex !== -1) {
       observers.splice(subscriberIndex, 1);
