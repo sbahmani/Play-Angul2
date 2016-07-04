@@ -12,7 +12,7 @@ export class HeroService {
         return this.http.get(this.heroesUrl)
             .toPromise()
             .then(response => {
-                console.info(response.json());
+                // console.info(response.json());
                 return response.json();
             })
             .catch(this.handleError);
@@ -65,7 +65,7 @@ export class HeroService {
     }
 
     private handleError(error:any) {
-        console.error('An error occurred', error);
+        // console.error('An error occurred', error);
         return Promise.reject(error.message || error);
     }
 }

@@ -5,6 +5,8 @@ import {provideRouter, RouterConfig} from "@angular/router";
 import {DashboardComponent} from "./dashboard.component";
 import {HeroesComponent} from "./heroes.component";
 import {HeroDetailComponent} from "./hero-detail.component";
+import {AuthGuard} from "./auth.guard";
+import {LoginComponent} from "./login.component";
 
 export const routes:RouterConfig = [
     {
@@ -18,11 +20,16 @@ export const routes:RouterConfig = [
     },
     {
         path: 'detail/:id',
-        component: HeroDetailComponent
+        component: HeroDetailComponent,
+        canActivate: [AuthGuard]
     },
     {
         path: 'heroes',
-        component: HeroesComponent
+        component: HeroesComponent,
+    },
+    {
+        path: 'login',
+        component: LoginComponent
     }
 ];
 

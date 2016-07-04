@@ -6,6 +6,8 @@ var router_1 = require("@angular/router");
 var dashboard_component_1 = require("./dashboard.component");
 var heroes_component_1 = require("./heroes.component");
 var hero_detail_component_1 = require("./hero-detail.component");
+var auth_guard_1 = require("./auth.guard");
+var login_component_1 = require("./login.component");
 exports.routes = [
     {
         path: '',
@@ -18,11 +20,16 @@ exports.routes = [
     },
     {
         path: 'detail/:id',
-        component: hero_detail_component_1.HeroDetailComponent
+        component: hero_detail_component_1.HeroDetailComponent,
+        canActivate: [auth_guard_1.AuthGuard]
     },
     {
         path: 'heroes',
-        component: heroes_component_1.HeroesComponent
+        component: heroes_component_1.HeroesComponent,
+    },
+    {
+        path: 'login',
+        component: login_component_1.LoginComponent
     }
 ];
 exports.APP_ROUTER_PROVIDERS = [

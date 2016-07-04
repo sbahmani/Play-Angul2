@@ -20,7 +20,7 @@ var HeroService = (function () {
         return this.http.get(this.heroesUrl)
             .toPromise()
             .then(function (response) {
-            console.info(response.json());
+            // console.info(response.json());
             return response.json();
         })
             .catch(this.handleError);
@@ -67,7 +67,7 @@ var HeroService = (function () {
             .catch(this.handleError);
     };
     HeroService.prototype.handleError = function (error) {
-        console.error('An error occurred', error);
+        // console.error('An error occurred', error);
         return Promise.reject(error.message || error);
     };
     HeroService = __decorate([

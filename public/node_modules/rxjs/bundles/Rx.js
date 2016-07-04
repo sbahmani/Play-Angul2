@@ -228,6 +228,31 @@ System.register("rxjs/util/root", [], true, function(require, exports, module) {
   return module.exports;
 });
 
+System.register("rxjs/symbol/observable", ["rxjs/util/root"], true, function(require, exports, module) {
+  var global = System.global,
+      __define = global.define;
+  global.define = undefined;
+  "use strict";
+  var root_1 = require("rxjs/util/root");
+  var Symbol = root_1.root.Symbol;
+  if (typeof Symbol === 'function') {
+    if (Symbol.observable) {
+      exports.$$observable = Symbol.observable;
+    } else {
+      if (typeof Symbol.for === 'function') {
+        exports.$$observable = Symbol.for('observable');
+      } else {
+        exports.$$observable = Symbol('observable');
+      }
+      Symbol.observable = exports.$$observable;
+    }
+  } else {
+    exports.$$observable = '@@observable';
+  }
+  global.define = __define;
+  return module.exports;
+});
+
 System.register("rxjs/util/isFunction", [], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -307,6 +332,18 @@ System.register("rxjs/util/UnsubscriptionError", [], true, function(require, exp
   return module.exports;
 });
 
+System.register("rxjs/symbol/rxSubscriber", ["rxjs/util/root"], true, function(require, exports, module) {
+  var global = System.global,
+      __define = global.define;
+  global.define = undefined;
+  "use strict";
+  var root_1 = require("rxjs/util/root");
+  var Symbol = root_1.root.Symbol;
+  exports.$$rxSubscriber = (typeof Symbol === 'function' && typeof Symbol.for === 'function') ? Symbol.for('rxSubscriber') : '@@rxSubscriber';
+  global.define = __define;
+  return module.exports;
+});
+
 System.register("rxjs/Observer", [], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -324,38 +361,61 @@ System.register("rxjs/Observer", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-System.register("rxjs/symbol/rxSubscriber", ["rxjs/util/root"], true, function(require, exports, module) {
+System.register("rxjs/SubjectSubscription", ["rxjs/Subscription"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var root_1 = require("rxjs/util/root");
-  var Symbol = root_1.root.Symbol;
-  exports.$$rxSubscriber = (typeof Symbol === 'function' && typeof Symbol.for === 'function') ? Symbol.for('rxSubscriber') : '@@rxSubscriber';
+  var __extends = (this && this.__extends) || function(d, b) {
+    for (var p in b)
+      if (b.hasOwnProperty(p))
+        d[p] = b[p];
+    function __() {
+      this.constructor = d;
+    }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+  var Subscription_1 = require("rxjs/Subscription");
+  var SubjectSubscription = (function(_super) {
+    __extends(SubjectSubscription, _super);
+    function SubjectSubscription(subject, observer) {
+      _super.call(this);
+      this.subject = subject;
+      this.observer = observer;
+      this.isUnsubscribed = false;
+    }
+    SubjectSubscription.prototype.unsubscribe = function() {
+      if (this.isUnsubscribed) {
+        return ;
+      }
+      this.isUnsubscribed = true;
+      var subject = this.subject;
+      var observers = subject.observers;
+      this.subject = null;
+      if (!observers || observers.length === 0 || subject.isUnsubscribed) {
+        return ;
+      }
+      var subscriberIndex = observers.indexOf(this.observer);
+      if (subscriberIndex !== -1) {
+        observers.splice(subscriberIndex, 1);
+      }
+    };
+    return SubjectSubscription;
+  }(Subscription_1.Subscription));
+  exports.SubjectSubscription = SubjectSubscription;
   global.define = __define;
   return module.exports;
 });
 
-System.register("ponyfill", [], true, function(require, exports, module) {
+System.register("rxjs/util/throwError", [], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
-  'use strict';
-  module.exports = function symbolObservablePonyfill(root) {
-    var result;
-    var Symbol = root.Symbol;
-    if (typeof Symbol === 'function') {
-      if (Symbol.observable) {
-        result = Symbol.observable;
-      } else {
-        result = Symbol('observable');
-        Symbol.observable = result;
-      }
-    } else {
-      result = '@@observable';
-    }
-    return result;
-  };
+  "use strict";
+  function throwError(e) {
+    throw e;
+  }
+  exports.throwError = throwError;
   global.define = __define;
   return module.exports;
 });
@@ -387,53 +447,7 @@ System.register("rxjs/util/ObjectUnsubscribedError", [], true, function(require,
   return module.exports;
 });
 
-System.register("rxjs/SubjectSubscription", ["rxjs/Subscription"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subscription_1 = require("rxjs/Subscription");
-  var SubjectSubscription = (function(_super) {
-    __extends(SubjectSubscription, _super);
-    function SubjectSubscription(subject, subscriber) {
-      _super.call(this);
-      this.subject = subject;
-      this.subscriber = subscriber;
-      this.isUnsubscribed = false;
-    }
-    SubjectSubscription.prototype.unsubscribe = function() {
-      if (this.isUnsubscribed) {
-        return ;
-      }
-      this.isUnsubscribed = true;
-      var subject = this.subject;
-      var observers = subject.observers;
-      this.subject = null;
-      if (!observers || observers.length === 0 || subject.isStopped || subject.isUnsubscribed) {
-        return ;
-      }
-      var subscriberIndex = observers.indexOf(this.subscriber);
-      if (subscriberIndex !== -1) {
-        observers.splice(subscriberIndex, 1);
-      }
-    };
-    return SubjectSubscription;
-  }(Subscription_1.Subscription));
-  exports.SubjectSubscription = SubjectSubscription;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/AsyncSubject", ["rxjs/Subject", "rxjs/Subscription"], true, function(require, exports, module) {
+System.register("rxjs/AsyncSubject", ["rxjs/Subject"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
@@ -448,36 +462,41 @@ System.register("rxjs/AsyncSubject", ["rxjs/Subject", "rxjs/Subscription"], true
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
   var Subject_1 = require("rxjs/Subject");
-  var Subscription_1 = require("rxjs/Subscription");
   var AsyncSubject = (function(_super) {
     __extends(AsyncSubject, _super);
     function AsyncSubject() {
       _super.apply(this, arguments);
       this.value = null;
       this.hasNext = false;
-      this.hasCompleted = false;
     }
     AsyncSubject.prototype._subscribe = function(subscriber) {
       if (this.hasCompleted && this.hasNext) {
         subscriber.next(this.value);
-        subscriber.complete();
-        return Subscription_1.Subscription.EMPTY;
-      } else if (this.hasError) {
-        subscriber.error(this.thrownError);
-        return Subscription_1.Subscription.EMPTY;
       }
       return _super.prototype._subscribe.call(this, subscriber);
     };
-    AsyncSubject.prototype.next = function(value) {
+    AsyncSubject.prototype._next = function(value) {
       this.value = value;
       this.hasNext = true;
     };
-    AsyncSubject.prototype.complete = function() {
-      this.hasCompleted = true;
+    AsyncSubject.prototype._complete = function() {
+      var index = -1;
+      var observers = this.observers;
+      var len = observers.length;
+      this.isUnsubscribed = true;
       if (this.hasNext) {
-        _super.prototype.next.call(this, this.value);
+        while (++index < len) {
+          var o = observers[index];
+          o.next(this.value);
+          o.complete();
+        }
+      } else {
+        while (++index < len) {
+          observers[index].complete();
+        }
       }
-      _super.prototype.complete.call(this);
+      this.isUnsubscribed = false;
+      this.unsubscribe();
     };
     return AsyncSubject;
   }(Subject_1.Subject));
@@ -513,7 +532,7 @@ System.register("rxjs/observable/BoundNodeCallbackObservable", ["rxjs/Observable
       this.args = args;
       this.scheduler = scheduler;
     }
-    BoundNodeCallbackObservable.create = function(func, selector, scheduler) {
+    BoundNodeCallbackObservable.create = function(callbackFunc, selector, scheduler) {
       if (selector === void 0) {
         selector = undefined;
       }
@@ -522,7 +541,7 @@ System.register("rxjs/observable/BoundNodeCallbackObservable", ["rxjs/Observable
         for (var _i = 0; _i < arguments.length; _i++) {
           args[_i - 0] = arguments[_i];
         }
-        return new BoundNodeCallbackObservable(func, selector, args, scheduler);
+        return new BoundNodeCallbackObservable(callbackFunc, selector, args, scheduler);
       };
     };
     BoundNodeCallbackObservable.prototype._subscribe = function(subscriber) {
@@ -639,19 +658,6 @@ System.register("rxjs/observable/BoundNodeCallbackObservable", ["rxjs/Observable
   return module.exports;
 });
 
-System.register("rxjs/util/isScheduler", [], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  function isScheduler(value) {
-    return value && typeof value.schedule === 'function';
-  }
-  exports.isScheduler = isScheduler;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/observable/ScalarObservable", ["rxjs/Observable"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -674,9 +680,6 @@ System.register("rxjs/observable/ScalarObservable", ["rxjs/Observable"], true, f
       this.value = value;
       this.scheduler = scheduler;
       this._isScalar = true;
-      if (scheduler) {
-        this._isScalar = false;
-      }
     }
     ScalarObservable.create = function(value, scheduler) {
       return new ScalarObservable(value, scheduler);
@@ -758,6 +761,19 @@ System.register("rxjs/observable/EmptyObservable", ["rxjs/Observable"], true, fu
     return EmptyObservable;
   }(Observable_1.Observable));
   exports.EmptyObservable = EmptyObservable;
+  global.define = __define;
+  return module.exports;
+});
+
+System.register("rxjs/util/isScheduler", [], true, function(require, exports, module) {
+  var global = System.global,
+      __define = global.define;
+  global.define = undefined;
+  "use strict";
+  function isScheduler(value) {
+    return value && typeof value.schedule === 'function';
+  }
+  exports.isScheduler = isScheduler;
   global.define = __define;
   return module.exports;
 });
@@ -1669,8 +1685,8 @@ System.register("rxjs/observable/FromEventObservable", ["rxjs/Observable", "rxjs
       this.eventName = eventName;
       this.selector = selector;
     }
-    FromEventObservable.create = function(target, eventName, selector) {
-      return new FromEventObservable(target, eventName, selector);
+    FromEventObservable.create = function(sourceObj, eventName, selector) {
+      return new FromEventObservable(sourceObj, eventName, selector);
     };
     FromEventObservable.setupSubscription = function(sourceObj, eventName, handler, subscriber) {
       var unsubscribe;
@@ -1680,22 +1696,19 @@ System.register("rxjs/observable/FromEventObservable", ["rxjs/Observable", "rxjs
           FromEventObservable.setupSubscription(sourceObj[i], eventName, handler, subscriber);
         }
       } else if (isEventTarget(sourceObj)) {
-        var source_1 = sourceObj;
         sourceObj.addEventListener(eventName, handler);
         unsubscribe = function() {
-          return source_1.removeEventListener(eventName, handler);
+          return sourceObj.removeEventListener(eventName, handler);
         };
       } else if (isJQueryStyleEventEmitter(sourceObj)) {
-        var source_2 = sourceObj;
         sourceObj.on(eventName, handler);
         unsubscribe = function() {
-          return source_2.off(eventName, handler);
+          return sourceObj.off(eventName, handler);
         };
       } else if (isNodeStyleEventEmmitter(sourceObj)) {
-        var source_3 = sourceObj;
         sourceObj.addListener(eventName, handler);
         unsubscribe = function() {
-          return source_3.removeListener(eventName, handler);
+          return sourceObj.removeListener(eventName, handler);
         };
       }
       subscriber.add(new Subscription_1.Subscription(unsubscribe));
@@ -1727,7 +1740,7 @@ System.register("rxjs/observable/FromEventObservable", ["rxjs/Observable", "rxjs
   return module.exports;
 });
 
-System.register("rxjs/observable/FromEventPatternObservable", ["rxjs/Observable", "rxjs/Subscription"], true, function(require, exports, module) {
+System.register("rxjs/observable/FromEventPatternObservable", ["rxjs/Observable", "rxjs/Subscription", "rxjs/util/tryCatch", "rxjs/util/errorObject"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
@@ -1743,6 +1756,8 @@ System.register("rxjs/observable/FromEventPatternObservable", ["rxjs/Observable"
   };
   var Observable_1 = require("rxjs/Observable");
   var Subscription_1 = require("rxjs/Subscription");
+  var tryCatch_1 = require("rxjs/util/tryCatch");
+  var errorObject_1 = require("rxjs/util/errorObject");
   var FromEventPatternObservable = (function(_super) {
     __extends(FromEventPatternObservable, _super);
     function FromEventPatternObservable(addHandler, removeHandler, selector) {
@@ -1755,36 +1770,26 @@ System.register("rxjs/observable/FromEventPatternObservable", ["rxjs/Observable"
       return new FromEventPatternObservable(addHandler, removeHandler, selector);
     };
     FromEventPatternObservable.prototype._subscribe = function(subscriber) {
-      var _this = this;
+      var addHandler = this.addHandler;
       var removeHandler = this.removeHandler;
-      var handler = !!this.selector ? function() {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-          args[_i - 0] = arguments[_i];
+      var selector = this.selector;
+      var handler = selector ? function(e) {
+        var result = tryCatch_1.tryCatch(selector).apply(null, arguments);
+        if (result === errorObject_1.errorObject) {
+          subscriber.error(result.e);
+        } else {
+          subscriber.next(result);
         }
-        _this._callSelector(subscriber, args);
       } : function(e) {
         subscriber.next(e);
       };
-      this._callAddHandler(handler, subscriber);
+      var result = tryCatch_1.tryCatch(addHandler)(handler);
+      if (result === errorObject_1.errorObject) {
+        subscriber.error(result.e);
+      }
       subscriber.add(new Subscription_1.Subscription(function() {
         removeHandler(handler);
       }));
-    };
-    FromEventPatternObservable.prototype._callSelector = function(subscriber, args) {
-      try {
-        var result = this.selector.apply(this, args);
-        subscriber.next(result);
-      } catch (e) {
-        subscriber.error(e);
-      }
-    };
-    FromEventPatternObservable.prototype._callAddHandler = function(handler, errorSubscriber) {
-      try {
-        this.addHandler(handler);
-      } catch (e) {
-        errorSubscriber.error(e);
-      }
     };
     return FromEventPatternObservable;
   }(Observable_1.Observable));
@@ -1800,218 +1805,6 @@ System.register("rxjs/observable/fromPromise", ["rxjs/observable/PromiseObservab
   "use strict";
   var PromiseObservable_1 = require("rxjs/observable/PromiseObservable");
   exports.fromPromise = PromiseObservable_1.PromiseObservable.create;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/observable/GenerateObservable", ["rxjs/Observable", "rxjs/util/isScheduler"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Observable_1 = require("rxjs/Observable");
-  var isScheduler_1 = require("rxjs/util/isScheduler");
-  var selfSelector = function(value) {
-    return value;
-  };
-  var GenerateObservable = (function(_super) {
-    __extends(GenerateObservable, _super);
-    function GenerateObservable(initialState, condition, iterate, resultSelector, scheduler) {
-      _super.call(this);
-      this.initialState = initialState;
-      this.condition = condition;
-      this.iterate = iterate;
-      this.resultSelector = resultSelector;
-      this.scheduler = scheduler;
-    }
-    GenerateObservable.create = function(initialStateOrOptions, condition, iterate, resultSelectorOrObservable, scheduler) {
-      if (arguments.length == 1) {
-        return new GenerateObservable(initialStateOrOptions.initialState, initialStateOrOptions.condition, initialStateOrOptions.iterate, initialStateOrOptions.resultSelector || selfSelector, initialStateOrOptions.scheduler);
-      }
-      if (resultSelectorOrObservable === undefined || isScheduler_1.isScheduler(resultSelectorOrObservable)) {
-        return new GenerateObservable(initialStateOrOptions, condition, iterate, selfSelector, resultSelectorOrObservable);
-      }
-      return new GenerateObservable(initialStateOrOptions, condition, iterate, resultSelectorOrObservable, scheduler);
-    };
-    GenerateObservable.prototype._subscribe = function(subscriber) {
-      var state = this.initialState;
-      if (this.scheduler) {
-        return this.scheduler.schedule(GenerateObservable.dispatch, 0, {
-          subscriber: subscriber,
-          iterate: this.iterate,
-          condition: this.condition,
-          resultSelector: this.resultSelector,
-          state: state
-        });
-      }
-      var _a = this,
-          condition = _a.condition,
-          resultSelector = _a.resultSelector,
-          iterate = _a.iterate;
-      do {
-        if (condition) {
-          var conditionResult = void 0;
-          try {
-            conditionResult = condition(state);
-          } catch (err) {
-            subscriber.error(err);
-            return ;
-          }
-          if (!conditionResult) {
-            subscriber.complete();
-            break;
-          }
-        }
-        var value = void 0;
-        try {
-          value = resultSelector(state);
-        } catch (err) {
-          subscriber.error(err);
-          return ;
-        }
-        subscriber.next(value);
-        if (subscriber.isUnsubscribed) {
-          break;
-        }
-        try {
-          state = iterate(state);
-        } catch (err) {
-          subscriber.error(err);
-          return ;
-        }
-      } while (true);
-    };
-    GenerateObservable.dispatch = function(state) {
-      var subscriber = state.subscriber,
-          condition = state.condition;
-      if (subscriber.isUnsubscribed) {
-        return ;
-      }
-      if (state.needIterate) {
-        try {
-          state.state = state.iterate(state.state);
-        } catch (err) {
-          subscriber.error(err);
-          return ;
-        }
-      } else {
-        state.needIterate = true;
-      }
-      if (condition) {
-        var conditionResult = void 0;
-        try {
-          conditionResult = condition(state.state);
-        } catch (err) {
-          subscriber.error(err);
-          return ;
-        }
-        if (!conditionResult) {
-          subscriber.complete();
-          return ;
-        }
-        if (subscriber.isUnsubscribed) {
-          return ;
-        }
-      }
-      var value;
-      try {
-        value = state.resultSelector(state.state);
-      } catch (err) {
-        subscriber.error(err);
-        return ;
-      }
-      if (subscriber.isUnsubscribed) {
-        return ;
-      }
-      subscriber.next(value);
-      if (subscriber.isUnsubscribed) {
-        return ;
-      }
-      return this.schedule(state);
-    };
-    return GenerateObservable;
-  }(Observable_1.Observable));
-  exports.GenerateObservable = GenerateObservable;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/observable/IfObservable", ["rxjs/Observable", "rxjs/util/subscribeToResult", "rxjs/OuterSubscriber"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Observable_1 = require("rxjs/Observable");
-  var subscribeToResult_1 = require("rxjs/util/subscribeToResult");
-  var OuterSubscriber_1 = require("rxjs/OuterSubscriber");
-  var IfObservable = (function(_super) {
-    __extends(IfObservable, _super);
-    function IfObservable(condition, thenSource, elseSource) {
-      _super.call(this);
-      this.condition = condition;
-      this.thenSource = thenSource;
-      this.elseSource = elseSource;
-    }
-    IfObservable.create = function(condition, thenSource, elseSource) {
-      return new IfObservable(condition, thenSource, elseSource);
-    };
-    IfObservable.prototype._subscribe = function(subscriber) {
-      var _a = this,
-          condition = _a.condition,
-          thenSource = _a.thenSource,
-          elseSource = _a.elseSource;
-      return new IfSubscriber(subscriber, condition, thenSource, elseSource);
-    };
-    return IfObservable;
-  }(Observable_1.Observable));
-  exports.IfObservable = IfObservable;
-  var IfSubscriber = (function(_super) {
-    __extends(IfSubscriber, _super);
-    function IfSubscriber(destination, condition, thenSource, elseSource) {
-      _super.call(this, destination);
-      this.condition = condition;
-      this.thenSource = thenSource;
-      this.elseSource = elseSource;
-      this.tryIf();
-    }
-    IfSubscriber.prototype.tryIf = function() {
-      var _a = this,
-          condition = _a.condition,
-          thenSource = _a.thenSource,
-          elseSource = _a.elseSource;
-      var result;
-      try {
-        result = condition();
-        var source = result ? thenSource : elseSource;
-        if (source) {
-          this.add(subscribeToResult_1.subscribeToResult(this, source));
-        } else {
-          this._complete();
-        }
-      } catch (err) {
-        this._error(err);
-      }
-    };
-    return IfSubscriber;
-  }(OuterSubscriber_1.OuterSubscriber));
   global.define = __define;
   return module.exports;
 });
@@ -2288,10 +2081,8 @@ System.register("rxjs/operator/race", ["rxjs/util/isArray", "rxjs/observable/Arr
         for (var i = 0; i < len; i++) {
           var observable = observables[i];
           var subscription = subscribeToResult_1.subscribeToResult(this, observable, observable, i);
-          if (this.subscriptions) {
-            this.subscriptions.push(subscription);
-            this.add(subscription);
-          }
+          this.subscriptions.push(subscription);
+          this.add(subscription);
         }
         this.observables = null;
       }
@@ -2335,90 +2126,6 @@ System.register("rxjs/observable/of", ["rxjs/observable/ArrayObservable"], true,
   "use strict";
   var ArrayObservable_1 = require("rxjs/observable/ArrayObservable");
   exports.of = ArrayObservable_1.ArrayObservable.of;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/operator/onErrorResumeNext", ["rxjs/observable/FromObservable", "rxjs/util/isArray", "rxjs/OuterSubscriber", "rxjs/util/subscribeToResult"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var FromObservable_1 = require("rxjs/observable/FromObservable");
-  var isArray_1 = require("rxjs/util/isArray");
-  var OuterSubscriber_1 = require("rxjs/OuterSubscriber");
-  var subscribeToResult_1 = require("rxjs/util/subscribeToResult");
-  function onErrorResumeNext() {
-    var nextSources = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-      nextSources[_i - 0] = arguments[_i];
-    }
-    if (nextSources.length === 1 && isArray_1.isArray(nextSources[0])) {
-      nextSources = nextSources[0];
-    }
-    return this.lift(new OnErrorResumeNextOperator(nextSources));
-  }
-  exports.onErrorResumeNext = onErrorResumeNext;
-  function onErrorResumeNextStatic() {
-    var nextSources = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-      nextSources[_i - 0] = arguments[_i];
-    }
-    var source = null;
-    if (nextSources.length === 1 && isArray_1.isArray(nextSources[0])) {
-      nextSources = nextSources[0];
-    }
-    source = nextSources.shift();
-    return new FromObservable_1.FromObservable(source, null).lift(new OnErrorResumeNextOperator(nextSources));
-  }
-  exports.onErrorResumeNextStatic = onErrorResumeNextStatic;
-  var OnErrorResumeNextOperator = (function() {
-    function OnErrorResumeNextOperator(nextSources) {
-      this.nextSources = nextSources;
-    }
-    OnErrorResumeNextOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new OnErrorResumeNextSubscriber(subscriber, this.nextSources));
-    };
-    return OnErrorResumeNextOperator;
-  }());
-  var OnErrorResumeNextSubscriber = (function(_super) {
-    __extends(OnErrorResumeNextSubscriber, _super);
-    function OnErrorResumeNextSubscriber(destination, nextSources) {
-      _super.call(this, destination);
-      this.destination = destination;
-      this.nextSources = nextSources;
-    }
-    OnErrorResumeNextSubscriber.prototype.notifyError = function(error, innerSub) {
-      this.subscribeToNextSource();
-    };
-    OnErrorResumeNextSubscriber.prototype.notifyComplete = function(innerSub) {
-      this.subscribeToNextSource();
-    };
-    OnErrorResumeNextSubscriber.prototype._error = function(err) {
-      this.subscribeToNextSource();
-    };
-    OnErrorResumeNextSubscriber.prototype._complete = function() {
-      this.subscribeToNextSource();
-    };
-    OnErrorResumeNextSubscriber.prototype.subscribeToNextSource = function() {
-      var next = this.nextSources.shift();
-      if (next) {
-        this.add(subscribeToResult_1.subscribeToResult(this, next));
-      } else {
-        this.destination.complete();
-      }
-    };
-    return OnErrorResumeNextSubscriber;
-  }(OuterSubscriber_1.OuterSubscriber));
   global.define = __define;
   return module.exports;
 });
@@ -2500,73 +2207,6 @@ System.register("rxjs/observable/RangeObservable", ["rxjs/Observable"], true, fu
     return RangeObservable;
   }(Observable_1.Observable));
   exports.RangeObservable = RangeObservable;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/observable/UsingObservable", ["rxjs/Observable", "rxjs/util/subscribeToResult", "rxjs/OuterSubscriber"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Observable_1 = require("rxjs/Observable");
-  var subscribeToResult_1 = require("rxjs/util/subscribeToResult");
-  var OuterSubscriber_1 = require("rxjs/OuterSubscriber");
-  var UsingObservable = (function(_super) {
-    __extends(UsingObservable, _super);
-    function UsingObservable(resourceFactory, observableFactory) {
-      _super.call(this);
-      this.resourceFactory = resourceFactory;
-      this.observableFactory = observableFactory;
-    }
-    UsingObservable.create = function(resourceFactory, observableFactory) {
-      return new UsingObservable(resourceFactory, observableFactory);
-    };
-    UsingObservable.prototype._subscribe = function(subscriber) {
-      var _a = this,
-          resourceFactory = _a.resourceFactory,
-          observableFactory = _a.observableFactory;
-      var resource;
-      try {
-        resource = resourceFactory();
-        return new UsingSubscriber(subscriber, resource, observableFactory);
-      } catch (err) {
-        subscriber.error(err);
-      }
-    };
-    return UsingObservable;
-  }(Observable_1.Observable));
-  exports.UsingObservable = UsingObservable;
-  var UsingSubscriber = (function(_super) {
-    __extends(UsingSubscriber, _super);
-    function UsingSubscriber(destination, resource, observableFactory) {
-      _super.call(this, destination);
-      this.resource = resource;
-      this.observableFactory = observableFactory;
-      destination.add(resource);
-      this.tryUse();
-    }
-    UsingSubscriber.prototype.tryUse = function() {
-      try {
-        var source = this.observableFactory.call(this, this.resource);
-        if (source) {
-          this.add(subscribeToResult_1.subscribeToResult(this, source));
-        }
-      } catch (err) {
-        this._error(err);
-      }
-    };
-    return UsingSubscriber;
-  }(OuterSubscriber_1.OuterSubscriber));
   global.define = __define;
   return module.exports;
 });
@@ -2808,10 +2448,7 @@ System.register("rxjs/operator/zip", ["rxjs/observable/ArrayObservable", "rxjs/u
       return i < this.length ? {
         value: array[i],
         done: false
-      } : {
-        value: null,
-        done: true
-      };
+      } : {done: true};
     };
     StaticArrayIterator.prototype.hasValue = function() {
       return this.array.length > this.index;
@@ -2838,10 +2475,7 @@ System.register("rxjs/operator/zip", ["rxjs/observable/ArrayObservable", "rxjs/u
     ZipBufferIterator.prototype.next = function() {
       var buffer = this.buffer;
       if (buffer.length === 0 && this.isComplete) {
-        return {
-          value: null,
-          done: true
-        };
+        return {done: true};
       } else {
         return {
           value: buffer.shift(),
@@ -2872,426 +2506,6 @@ System.register("rxjs/operator/zip", ["rxjs/observable/ArrayObservable", "rxjs/u
     };
     return ZipBufferIterator;
   }(OuterSubscriber_1.OuterSubscriber));
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/observable/dom/AjaxObservable", ["rxjs/util/root", "rxjs/util/tryCatch", "rxjs/util/errorObject", "rxjs/Observable", "rxjs/Subscriber"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var root_1 = require("rxjs/util/root");
-  var tryCatch_1 = require("rxjs/util/tryCatch");
-  var errorObject_1 = require("rxjs/util/errorObject");
-  var Observable_1 = require("rxjs/Observable");
-  var Subscriber_1 = require("rxjs/Subscriber");
-  function createXHRDefault() {
-    var xhr = new root_1.root.XMLHttpRequest();
-    if (this.crossDomain) {
-      if ('withCredentials' in xhr) {
-        xhr.withCredentials = true;
-        return xhr;
-      } else if (!!root_1.root.XDomainRequest) {
-        return new root_1.root.XDomainRequest();
-      } else {
-        throw new Error('CORS is not supported by your browser');
-      }
-    } else {
-      return xhr;
-    }
-  }
-  function defaultGetResultSelector(response) {
-    return response.response;
-  }
-  function ajaxGet(url, resultSelector, headers) {
-    if (resultSelector === void 0) {
-      resultSelector = defaultGetResultSelector;
-    }
-    if (headers === void 0) {
-      headers = null;
-    }
-    return new AjaxObservable({
-      method: 'GET',
-      url: url,
-      resultSelector: resultSelector,
-      headers: headers
-    });
-  }
-  exports.ajaxGet = ajaxGet;
-  ;
-  function ajaxPost(url, body, headers) {
-    return new AjaxObservable({
-      method: 'POST',
-      url: url,
-      body: body,
-      headers: headers
-    });
-  }
-  exports.ajaxPost = ajaxPost;
-  ;
-  function ajaxDelete(url, headers) {
-    return new AjaxObservable({
-      method: 'DELETE',
-      url: url,
-      headers: headers
-    });
-  }
-  exports.ajaxDelete = ajaxDelete;
-  ;
-  function ajaxPut(url, body, headers) {
-    return new AjaxObservable({
-      method: 'PUT',
-      url: url,
-      body: body,
-      headers: headers
-    });
-  }
-  exports.ajaxPut = ajaxPut;
-  ;
-  function ajaxGetJSON(url, resultSelector, headers) {
-    var finalResultSelector = resultSelector ? function(res) {
-      return resultSelector(res.response);
-    } : function(res) {
-      return res.response;
-    };
-    return new AjaxObservable({
-      method: 'GET',
-      url: url,
-      responseType: 'json',
-      resultSelector: finalResultSelector,
-      headers: headers
-    });
-  }
-  exports.ajaxGetJSON = ajaxGetJSON;
-  ;
-  var AjaxObservable = (function(_super) {
-    __extends(AjaxObservable, _super);
-    function AjaxObservable(urlOrRequest) {
-      _super.call(this);
-      var request = {
-        async: true,
-        createXHR: createXHRDefault,
-        crossDomain: false,
-        headers: {},
-        method: 'GET',
-        responseType: 'json',
-        timeout: 0
-      };
-      if (typeof urlOrRequest === 'string') {
-        request.url = urlOrRequest;
-      } else {
-        for (var prop in urlOrRequest) {
-          if (urlOrRequest.hasOwnProperty(prop)) {
-            request[prop] = urlOrRequest[prop];
-          }
-        }
-      }
-      this.request = request;
-    }
-    AjaxObservable._create_stub = function() {
-      return null;
-    };
-    AjaxObservable.prototype._subscribe = function(subscriber) {
-      return new AjaxSubscriber(subscriber, this.request);
-    };
-    AjaxObservable.create = (function() {
-      var create = function(urlOrRequest) {
-        return new AjaxObservable(urlOrRequest);
-      };
-      create.get = ajaxGet;
-      create.post = ajaxPost;
-      create.delete = ajaxDelete;
-      create.put = ajaxPut;
-      create.getJSON = ajaxGetJSON;
-      return create;
-    })();
-    return AjaxObservable;
-  }(Observable_1.Observable));
-  exports.AjaxObservable = AjaxObservable;
-  var AjaxSubscriber = (function(_super) {
-    __extends(AjaxSubscriber, _super);
-    function AjaxSubscriber(destination, request) {
-      _super.call(this, destination);
-      this.request = request;
-      this.done = false;
-      var headers = request.headers = request.headers || {};
-      if (!request.crossDomain && !headers['X-Requested-With']) {
-        headers['X-Requested-With'] = 'XMLHttpRequest';
-      }
-      if (!('Content-Type' in headers)) {
-        headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
-      }
-      request.body = this.serializeBody(request.body, request.headers['Content-Type']);
-      this.resultSelector = request.resultSelector;
-      this.send();
-    }
-    AjaxSubscriber.prototype.next = function(e) {
-      this.done = true;
-      var _a = this,
-          resultSelector = _a.resultSelector,
-          xhr = _a.xhr,
-          request = _a.request,
-          destination = _a.destination;
-      var response = new AjaxResponse(e, xhr, request);
-      if (resultSelector) {
-        var result = tryCatch_1.tryCatch(resultSelector)(response);
-        if (result === errorObject_1.errorObject) {
-          this.error(errorObject_1.errorObject.e);
-        } else {
-          destination.next(result);
-        }
-      } else {
-        destination.next(response);
-      }
-    };
-    AjaxSubscriber.prototype.send = function() {
-      var _a = this,
-          request = _a.request,
-          _b = _a.request,
-          user = _b.user,
-          method = _b.method,
-          url = _b.url,
-          async = _b.async,
-          password = _b.password,
-          headers = _b.headers,
-          body = _b.body;
-      var createXHR = request.createXHR;
-      var xhr = tryCatch_1.tryCatch(createXHR).call(request);
-      if (xhr === errorObject_1.errorObject) {
-        this.error(errorObject_1.errorObject.e);
-      } else {
-        this.xhr = xhr;
-        var result = void 0;
-        if (user) {
-          result = tryCatch_1.tryCatch(xhr.open).call(xhr, method, url, async, user, password);
-        } else {
-          result = tryCatch_1.tryCatch(xhr.open).call(xhr, method, url, async);
-        }
-        if (result === errorObject_1.errorObject) {
-          this.error(errorObject_1.errorObject.e);
-          return ;
-        }
-        xhr.timeout = request.timeout;
-        xhr.responseType = request.responseType;
-        this.setHeaders(xhr, headers);
-        this.setupEvents(xhr, request);
-        if (body) {
-          xhr.send(body);
-        } else {
-          xhr.send();
-        }
-      }
-    };
-    AjaxSubscriber.prototype.serializeBody = function(body, contentType) {
-      if (!body || typeof body === 'string') {
-        return body;
-      } else if (root_1.root.FormData && body instanceof root_1.root.FormData) {
-        return body;
-      }
-      var splitIndex = contentType.indexOf(';');
-      if (splitIndex !== -1) {
-        contentType = contentType.substring(0, splitIndex);
-      }
-      switch (contentType) {
-        case 'application/x-www-form-urlencoded':
-          return Object.keys(body).map(function(key) {
-            return (encodeURI(key) + "=" + encodeURI(body[key]));
-          }).join('&');
-        case 'application/json':
-          return JSON.stringify(body);
-      }
-    };
-    AjaxSubscriber.prototype.setHeaders = function(xhr, headers) {
-      for (var key in headers) {
-        if (headers.hasOwnProperty(key)) {
-          xhr.setRequestHeader(key, headers[key]);
-        }
-      }
-    };
-    AjaxSubscriber.prototype.setupEvents = function(xhr, request) {
-      var progressSubscriber = request.progressSubscriber;
-      xhr.ontimeout = function xhrTimeout(e) {
-        var _a = xhrTimeout,
-            subscriber = _a.subscriber,
-            progressSubscriber = _a.progressSubscriber,
-            request = _a.request;
-        if (progressSubscriber) {
-          progressSubscriber.error(e);
-        }
-        subscriber.error(new AjaxTimeoutError(this, request));
-      };
-      xhr.ontimeout.request = request;
-      xhr.ontimeout.subscriber = this;
-      xhr.ontimeout.progressSubscriber = progressSubscriber;
-      if (xhr.upload && 'withCredentials' in xhr && root_1.root.XDomainRequest) {
-        if (progressSubscriber) {
-          xhr.onprogress = function xhrProgress(e) {
-            var progressSubscriber = xhrProgress.progressSubscriber;
-            progressSubscriber.next(e);
-          };
-          xhr.onprogress.progressSubscriber = progressSubscriber;
-        }
-        xhr.onerror = function xhrError(e) {
-          var _a = xhrError,
-              progressSubscriber = _a.progressSubscriber,
-              subscriber = _a.subscriber,
-              request = _a.request;
-          if (progressSubscriber) {
-            progressSubscriber.error(e);
-          }
-          subscriber.error(new AjaxError('ajax error', this, request));
-        };
-        xhr.onerror.request = request;
-        xhr.onerror.subscriber = this;
-        xhr.onerror.progressSubscriber = progressSubscriber;
-      }
-      xhr.onreadystatechange = function xhrReadyStateChange(e) {
-        var _a = xhrReadyStateChange,
-            subscriber = _a.subscriber,
-            progressSubscriber = _a.progressSubscriber,
-            request = _a.request;
-        if (this.readyState === 4) {
-          var status_1 = this.status === 1223 ? 204 : this.status;
-          var response = (this.responseType === 'text' ? (this.response || this.responseText) : this.response);
-          if (status_1 === 0) {
-            status_1 = response ? 200 : 0;
-          }
-          if (200 <= status_1 && status_1 < 300) {
-            if (progressSubscriber) {
-              progressSubscriber.complete();
-            }
-            subscriber.next(e);
-            subscriber.complete();
-          } else {
-            if (progressSubscriber) {
-              progressSubscriber.error(e);
-            }
-            subscriber.error(new AjaxError('ajax error ' + status_1, this, request));
-          }
-        }
-      };
-      xhr.onreadystatechange.subscriber = this;
-      xhr.onreadystatechange.progressSubscriber = progressSubscriber;
-      xhr.onreadystatechange.request = request;
-    };
-    AjaxSubscriber.prototype.unsubscribe = function() {
-      var _a = this,
-          done = _a.done,
-          xhr = _a.xhr;
-      if (!done && xhr && xhr.readyState !== 4) {
-        xhr.abort();
-      }
-      _super.prototype.unsubscribe.call(this);
-    };
-    return AjaxSubscriber;
-  }(Subscriber_1.Subscriber));
-  exports.AjaxSubscriber = AjaxSubscriber;
-  var AjaxResponse = (function() {
-    function AjaxResponse(originalEvent, xhr, request) {
-      this.originalEvent = originalEvent;
-      this.xhr = xhr;
-      this.request = request;
-      this.status = xhr.status;
-      this.responseType = xhr.responseType || request.responseType;
-      switch (this.responseType) {
-        case 'json':
-          if ('response' in xhr) {
-            this.response = xhr.responseType ? xhr.response : JSON.parse(xhr.response || xhr.responseText || '');
-          } else {
-            this.response = JSON.parse(xhr.responseText || '');
-          }
-          break;
-        case 'xml':
-          this.response = xhr.responseXML;
-          break;
-        case 'text':
-        default:
-          this.response = ('response' in xhr) ? xhr.response : xhr.responseText;
-          break;
-      }
-    }
-    return AjaxResponse;
-  }());
-  exports.AjaxResponse = AjaxResponse;
-  var AjaxError = (function(_super) {
-    __extends(AjaxError, _super);
-    function AjaxError(message, xhr, request) {
-      _super.call(this, message);
-      this.message = message;
-      this.xhr = xhr;
-      this.request = request;
-      this.status = xhr.status;
-    }
-    return AjaxError;
-  }(Error));
-  exports.AjaxError = AjaxError;
-  var AjaxTimeoutError = (function(_super) {
-    __extends(AjaxTimeoutError, _super);
-    function AjaxTimeoutError(xhr, request) {
-      _super.call(this, 'ajax timeout', xhr, request);
-    }
-    return AjaxTimeoutError;
-  }(AjaxError));
-  exports.AjaxTimeoutError = AjaxTimeoutError;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/scheduler/queue", ["rxjs/scheduler/QueueScheduler"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var QueueScheduler_1 = require("rxjs/scheduler/QueueScheduler");
-  exports.queue = new QueueScheduler_1.QueueScheduler();
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/util/assign", ["rxjs/util/root"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var root_1 = require("rxjs/util/root");
-  var Object = root_1.root.Object;
-  if (typeof Object.assign != 'function') {
-    (function() {
-      Object.assign = function assignPolyfill(target) {
-        var sources = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-          sources[_i - 1] = arguments[_i];
-        }
-        if (target === undefined || target === null) {
-          throw new TypeError('Cannot convert undefined or null to object');
-        }
-        var output = Object(target);
-        var len = sources.length;
-        for (var index = 0; index < len; index++) {
-          var source = sources[index];
-          if (source !== undefined && source !== null) {
-            for (var key in source) {
-              if (source.hasOwnProperty(key)) {
-                output[key] = source[key];
-              }
-            }
-          }
-        }
-        return output;
-      };
-    })();
-  }
-  exports.assign = Object.assign;
   global.define = __define;
   return module.exports;
 });
@@ -3427,7 +2641,7 @@ System.register("rxjs/operator/bufferCount", ["rxjs/Subscriber"], true, function
   return module.exports;
 });
 
-System.register("rxjs/operator/bufferTime", ["rxjs/Subscriber", "rxjs/scheduler/async", "rxjs/util/isScheduler"], true, function(require, exports, module) {
+System.register("rxjs/operator/bufferTime", ["rxjs/Subscriber", "rxjs/scheduler/async"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
@@ -3443,65 +2657,40 @@ System.register("rxjs/operator/bufferTime", ["rxjs/Subscriber", "rxjs/scheduler/
   };
   var Subscriber_1 = require("rxjs/Subscriber");
   var async_1 = require("rxjs/scheduler/async");
-  var isScheduler_1 = require("rxjs/util/isScheduler");
-  function bufferTime(bufferTimeSpan) {
-    var length = arguments.length;
-    var scheduler = async_1.async;
-    if (isScheduler_1.isScheduler(arguments[arguments.length - 1])) {
-      scheduler = arguments[arguments.length - 1];
-      length--;
+  function bufferTime(bufferTimeSpan, bufferCreationInterval, scheduler) {
+    if (bufferCreationInterval === void 0) {
+      bufferCreationInterval = null;
     }
-    var bufferCreationInterval = null;
-    if (length >= 2) {
-      bufferCreationInterval = arguments[1];
+    if (scheduler === void 0) {
+      scheduler = async_1.async;
     }
-    var maxBufferSize = Number.POSITIVE_INFINITY;
-    if (length >= 3) {
-      maxBufferSize = arguments[2];
-    }
-    return this.lift(new BufferTimeOperator(bufferTimeSpan, bufferCreationInterval, maxBufferSize, scheduler));
+    return this.lift(new BufferTimeOperator(bufferTimeSpan, bufferCreationInterval, scheduler));
   }
   exports.bufferTime = bufferTime;
   var BufferTimeOperator = (function() {
-    function BufferTimeOperator(bufferTimeSpan, bufferCreationInterval, maxBufferSize, scheduler) {
+    function BufferTimeOperator(bufferTimeSpan, bufferCreationInterval, scheduler) {
       this.bufferTimeSpan = bufferTimeSpan;
       this.bufferCreationInterval = bufferCreationInterval;
-      this.maxBufferSize = maxBufferSize;
       this.scheduler = scheduler;
     }
     BufferTimeOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new BufferTimeSubscriber(subscriber, this.bufferTimeSpan, this.bufferCreationInterval, this.maxBufferSize, this.scheduler));
+      return source._subscribe(new BufferTimeSubscriber(subscriber, this.bufferTimeSpan, this.bufferCreationInterval, this.scheduler));
     };
     return BufferTimeOperator;
   }());
-  var Context = (function() {
-    function Context() {
-      this.buffer = [];
-    }
-    return Context;
-  }());
   var BufferTimeSubscriber = (function(_super) {
     __extends(BufferTimeSubscriber, _super);
-    function BufferTimeSubscriber(destination, bufferTimeSpan, bufferCreationInterval, maxBufferSize, scheduler) {
+    function BufferTimeSubscriber(destination, bufferTimeSpan, bufferCreationInterval, scheduler) {
       _super.call(this, destination);
       this.bufferTimeSpan = bufferTimeSpan;
       this.bufferCreationInterval = bufferCreationInterval;
-      this.maxBufferSize = maxBufferSize;
       this.scheduler = scheduler;
-      this.contexts = [];
-      var context = this.openContext();
-      this.timespanOnly = bufferCreationInterval == null || bufferCreationInterval < 0;
-      if (this.timespanOnly) {
-        var timeSpanOnlyState = {
-          subscriber: this,
-          context: context,
-          bufferTimeSpan: bufferTimeSpan
-        };
-        this.add(context.closeAction = scheduler.schedule(dispatchBufferTimeSpanOnly, bufferTimeSpan, timeSpanOnlyState));
-      } else {
+      this.buffers = [];
+      var buffer = this.openBuffer();
+      if (bufferCreationInterval !== null && bufferCreationInterval >= 0) {
         var closeState = {
           subscriber: this,
-          context: context
+          buffer: buffer
         };
         var creationState = {
           bufferTimeSpan: bufferTimeSpan,
@@ -3509,80 +2698,61 @@ System.register("rxjs/operator/bufferTime", ["rxjs/Subscriber", "rxjs/scheduler/
           subscriber: this,
           scheduler: scheduler
         };
-        this.add(context.closeAction = scheduler.schedule(dispatchBufferClose, bufferTimeSpan, closeState));
+        this.add(scheduler.schedule(dispatchBufferClose, bufferTimeSpan, closeState));
         this.add(scheduler.schedule(dispatchBufferCreation, bufferCreationInterval, creationState));
+      } else {
+        var timeSpanOnlyState = {
+          subscriber: this,
+          buffer: buffer,
+          bufferTimeSpan: bufferTimeSpan
+        };
+        this.add(scheduler.schedule(dispatchBufferTimeSpanOnly, bufferTimeSpan, timeSpanOnlyState));
       }
     }
     BufferTimeSubscriber.prototype._next = function(value) {
-      var contexts = this.contexts;
-      var len = contexts.length;
-      var filledBufferContext;
+      var buffers = this.buffers;
+      var len = buffers.length;
       for (var i = 0; i < len; i++) {
-        var context = contexts[i];
-        var buffer = context.buffer;
-        buffer.push(value);
-        if (buffer.length == this.maxBufferSize) {
-          filledBufferContext = context;
-        }
-      }
-      if (filledBufferContext) {
-        this.onBufferFull(filledBufferContext);
+        buffers[i].push(value);
       }
     };
     BufferTimeSubscriber.prototype._error = function(err) {
-      this.contexts.length = 0;
+      this.buffers.length = 0;
       _super.prototype._error.call(this, err);
     };
     BufferTimeSubscriber.prototype._complete = function() {
       var _a = this,
-          contexts = _a.contexts,
+          buffers = _a.buffers,
           destination = _a.destination;
-      while (contexts.length > 0) {
-        var context = contexts.shift();
-        destination.next(context.buffer);
+      while (buffers.length > 0) {
+        destination.next(buffers.shift());
       }
       _super.prototype._complete.call(this);
     };
     BufferTimeSubscriber.prototype._unsubscribe = function() {
-      this.contexts = null;
+      this.buffers = null;
     };
-    BufferTimeSubscriber.prototype.onBufferFull = function(context) {
-      this.closeContext(context);
-      var closeAction = context.closeAction;
-      closeAction.unsubscribe();
-      this.remove(closeAction);
-      if (this.timespanOnly) {
-        context = this.openContext();
-        var bufferTimeSpan = this.bufferTimeSpan;
-        var timeSpanOnlyState = {
-          subscriber: this,
-          context: context,
-          bufferTimeSpan: bufferTimeSpan
-        };
-        this.add(context.closeAction = this.scheduler.schedule(dispatchBufferTimeSpanOnly, bufferTimeSpan, timeSpanOnlyState));
-      }
+    BufferTimeSubscriber.prototype.openBuffer = function() {
+      var buffer = [];
+      this.buffers.push(buffer);
+      return buffer;
     };
-    BufferTimeSubscriber.prototype.openContext = function() {
-      var context = new Context();
-      this.contexts.push(context);
-      return context;
-    };
-    BufferTimeSubscriber.prototype.closeContext = function(context) {
-      this.destination.next(context.buffer);
-      var contexts = this.contexts;
-      contexts.splice(contexts.indexOf(context), 1);
+    BufferTimeSubscriber.prototype.closeBuffer = function(buffer) {
+      this.destination.next(buffer);
+      var buffers = this.buffers;
+      buffers.splice(buffers.indexOf(buffer), 1);
     };
     return BufferTimeSubscriber;
   }(Subscriber_1.Subscriber));
   function dispatchBufferTimeSpanOnly(state) {
     var subscriber = state.subscriber;
-    var prevContext = state.context;
-    if (prevContext) {
-      subscriber.closeContext(prevContext);
+    var prevBuffer = state.buffer;
+    if (prevBuffer) {
+      subscriber.closeBuffer(prevBuffer);
     }
-    state.context = subscriber.openContext();
+    state.buffer = subscriber.openBuffer();
     if (!subscriber.isUnsubscribed) {
-      state.context.closeAction = this.schedule(state, state.bufferTimeSpan);
+      this.schedule(state, state.bufferTimeSpan);
     }
   }
   function dispatchBufferCreation(state) {
@@ -3590,20 +2760,20 @@ System.register("rxjs/operator/bufferTime", ["rxjs/Subscriber", "rxjs/scheduler/
         bufferTimeSpan = state.bufferTimeSpan,
         subscriber = state.subscriber,
         scheduler = state.scheduler;
-    var context = subscriber.openContext();
+    var buffer = subscriber.openBuffer();
     var action = this;
     if (!subscriber.isUnsubscribed) {
-      subscriber.add(context.closeAction = scheduler.schedule(dispatchBufferClose, bufferTimeSpan, {
+      action.add(scheduler.schedule(dispatchBufferClose, bufferTimeSpan, {
         subscriber: subscriber,
-        context: context
+        buffer: buffer
       }));
       action.schedule(state, bufferCreationInterval);
     }
   }
   function dispatchBufferClose(arg) {
     var subscriber = arg.subscriber,
-        context = arg.context;
-    subscriber.closeContext(context);
+        buffer = arg.buffer;
+    subscriber.closeBuffer(buffer);
   }
   global.define = __define;
   return module.exports;
@@ -3824,58 +2994,152 @@ System.register("rxjs/operator/bufferWhen", ["rxjs/Subscription", "rxjs/util/try
   return module.exports;
 });
 
-System.register("rxjs/operator/cache", ["rxjs/Observable", "rxjs/ReplaySubject"], true, function(require, exports, module) {
+System.register("rxjs/scheduler/queue", ["rxjs/scheduler/QueueScheduler"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
+  var QueueScheduler_1 = require("rxjs/scheduler/QueueScheduler");
+  exports.queue = new QueueScheduler_1.QueueScheduler();
+  global.define = __define;
+  return module.exports;
+});
+
+System.register("rxjs/observable/ConnectableObservable", ["rxjs/Observable", "rxjs/Subscriber", "rxjs/Subscription"], true, function(require, exports, module) {
+  var global = System.global,
+      __define = global.define;
+  global.define = undefined;
+  "use strict";
+  var __extends = (this && this.__extends) || function(d, b) {
+    for (var p in b)
+      if (b.hasOwnProperty(p))
+        d[p] = b[p];
+    function __() {
+      this.constructor = d;
+    }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
   var Observable_1 = require("rxjs/Observable");
-  var ReplaySubject_1 = require("rxjs/ReplaySubject");
-  function cache(bufferSize, windowTime, scheduler) {
-    if (bufferSize === void 0) {
-      bufferSize = Number.POSITIVE_INFINITY;
+  var Subscriber_1 = require("rxjs/Subscriber");
+  var Subscription_1 = require("rxjs/Subscription");
+  var ConnectableObservable = (function(_super) {
+    __extends(ConnectableObservable, _super);
+    function ConnectableObservable(source, subjectFactory) {
+      _super.call(this);
+      this.source = source;
+      this.subjectFactory = subjectFactory;
     }
-    if (windowTime === void 0) {
-      windowTime = Number.POSITIVE_INFINITY;
-    }
-    var subject;
-    var source = this;
-    var refs = 0;
-    var outerSub;
-    var getSubject = function() {
-      subject = new ReplaySubject_1.ReplaySubject(bufferSize, windowTime, scheduler);
-      return subject;
+    ConnectableObservable.prototype._subscribe = function(subscriber) {
+      return this.getSubject().subscribe(subscriber);
     };
-    return new Observable_1.Observable(function(observer) {
-      if (!subject) {
-        subject = getSubject();
-        outerSub = source.subscribe(function(value) {
-          return subject.next(value);
-        }, function(err) {
-          var s = subject;
-          subject = null;
-          s.error(err);
-        }, function() {
-          return subject.complete();
-        });
+    ConnectableObservable.prototype.getSubject = function() {
+      var subject = this.subject;
+      if (subject && !subject.isUnsubscribed) {
+        return subject;
       }
-      refs++;
-      if (!subject) {
-        subject = getSubject();
+      return (this.subject = this.subjectFactory());
+    };
+    ConnectableObservable.prototype.connect = function() {
+      var source = this.source;
+      var subscription = this.subscription;
+      if (subscription && !subscription.isUnsubscribed) {
+        return subscription;
       }
-      var innerSub = subject.subscribe(observer);
-      return function() {
-        refs--;
-        if (innerSub) {
-          innerSub.unsubscribe();
+      subscription = source.subscribe(this.getSubject());
+      subscription.add(new ConnectableSubscription(this));
+      return (this.subscription = subscription);
+    };
+    ConnectableObservable.prototype.refCount = function() {
+      return new RefCountObservable(this);
+    };
+    ConnectableObservable.prototype._closeSubscription = function() {
+      this.subject = null;
+      this.subscription = null;
+    };
+    return ConnectableObservable;
+  }(Observable_1.Observable));
+  exports.ConnectableObservable = ConnectableObservable;
+  var ConnectableSubscription = (function(_super) {
+    __extends(ConnectableSubscription, _super);
+    function ConnectableSubscription(connectable) {
+      _super.call(this);
+      this.connectable = connectable;
+    }
+    ConnectableSubscription.prototype._unsubscribe = function() {
+      var connectable = this.connectable;
+      connectable._closeSubscription();
+      this.connectable = null;
+    };
+    return ConnectableSubscription;
+  }(Subscription_1.Subscription));
+  var RefCountObservable = (function(_super) {
+    __extends(RefCountObservable, _super);
+    function RefCountObservable(connectable, refCount) {
+      if (refCount === void 0) {
+        refCount = 0;
+      }
+      _super.call(this);
+      this.connectable = connectable;
+      this.refCount = refCount;
+    }
+    RefCountObservable.prototype._subscribe = function(subscriber) {
+      var connectable = this.connectable;
+      var refCountSubscriber = new RefCountSubscriber(subscriber, this);
+      var subscription = connectable.subscribe(refCountSubscriber);
+      if (!subscription.isUnsubscribed && ++this.refCount === 1) {
+        refCountSubscriber.connection = this.connection = connectable.connect();
+      }
+      return subscription;
+    };
+    return RefCountObservable;
+  }(Observable_1.Observable));
+  var RefCountSubscriber = (function(_super) {
+    __extends(RefCountSubscriber, _super);
+    function RefCountSubscriber(destination, refCountObservable) {
+      _super.call(this, null);
+      this.destination = destination;
+      this.refCountObservable = refCountObservable;
+      this.connection = refCountObservable.connection;
+      destination.add(this);
+    }
+    RefCountSubscriber.prototype._next = function(value) {
+      this.destination.next(value);
+    };
+    RefCountSubscriber.prototype._error = function(err) {
+      this._resetConnectable();
+      this.destination.error(err);
+    };
+    RefCountSubscriber.prototype._complete = function() {
+      this._resetConnectable();
+      this.destination.complete();
+    };
+    RefCountSubscriber.prototype._resetConnectable = function() {
+      var observable = this.refCountObservable;
+      var obsConnection = observable.connection;
+      var subConnection = this.connection;
+      if (subConnection && subConnection === obsConnection) {
+        observable.refCount = 0;
+        obsConnection.unsubscribe();
+        observable.connection = null;
+        this.unsubscribe();
+      }
+    };
+    RefCountSubscriber.prototype._unsubscribe = function() {
+      var observable = this.refCountObservable;
+      if (observable.refCount === 0) {
+        return ;
+      }
+      if (--observable.refCount === 0) {
+        var obsConnection = observable.connection;
+        var subConnection = this.connection;
+        if (subConnection && subConnection === obsConnection) {
+          obsConnection.unsubscribe();
+          observable.connection = null;
         }
-        if (refs === 0) {
-          outerSub.unsubscribe();
-        }
-      };
-    });
-  }
-  exports.cache = cache;
+      }
+    };
+    return RefCountSubscriber;
+  }(Subscriber_1.Subscriber));
   global.define = __define;
   return module.exports;
 });
@@ -4805,101 +4069,6 @@ System.register("rxjs/operator/delayWhen", ["rxjs/Subscriber", "rxjs/Observable"
   return module.exports;
 });
 
-System.register("rxjs/operator/distinct", ["rxjs/OuterSubscriber", "rxjs/util/subscribeToResult"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var OuterSubscriber_1 = require("rxjs/OuterSubscriber");
-  var subscribeToResult_1 = require("rxjs/util/subscribeToResult");
-  function distinct(compare, flushes) {
-    return this.lift(new DistinctOperator(compare, flushes));
-  }
-  exports.distinct = distinct;
-  var DistinctOperator = (function() {
-    function DistinctOperator(compare, flushes) {
-      this.compare = compare;
-      this.flushes = flushes;
-    }
-    DistinctOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new DistinctSubscriber(subscriber, this.compare, this.flushes));
-    };
-    return DistinctOperator;
-  }());
-  var DistinctSubscriber = (function(_super) {
-    __extends(DistinctSubscriber, _super);
-    function DistinctSubscriber(destination, compare, flushes) {
-      _super.call(this, destination);
-      this.values = [];
-      if (typeof compare === 'function') {
-        this.compare = compare;
-      }
-      if (flushes) {
-        this.add(subscribeToResult_1.subscribeToResult(this, flushes));
-      }
-    }
-    DistinctSubscriber.prototype.notifyNext = function(outerValue, innerValue, outerIndex, innerIndex, innerSub) {
-      this.values.length = 0;
-    };
-    DistinctSubscriber.prototype.notifyError = function(error, innerSub) {
-      this._error(error);
-    };
-    DistinctSubscriber.prototype._next = function(value) {
-      var found = false;
-      var values = this.values;
-      var len = values.length;
-      try {
-        for (var i = 0; i < len; i++) {
-          if (this.compare(values[i], value)) {
-            found = true;
-            return ;
-          }
-        }
-      } catch (err) {
-        this.destination.error(err);
-        return ;
-      }
-      this.values.push(value);
-      this.destination.next(value);
-    };
-    DistinctSubscriber.prototype.compare = function(x, y) {
-      return x === y;
-    };
-    return DistinctSubscriber;
-  }(OuterSubscriber_1.OuterSubscriber));
-  exports.DistinctSubscriber = DistinctSubscriber;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/operator/distinctKey", ["rxjs/operator/distinct"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var distinct_1 = require("rxjs/operator/distinct");
-  function distinctKey(key, compare, flushes) {
-    return distinct_1.distinct.call(this, function(x, y) {
-      if (compare) {
-        return compare(x[key], y[key]);
-      }
-      return x[key] === y[key];
-    }, flushes);
-  }
-  exports.distinctKey = distinctKey;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/operator/distinctUntilChanged", ["rxjs/Subscriber", "rxjs/util/tryCatch", "rxjs/util/errorObject"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -4973,25 +4142,6 @@ System.register("rxjs/operator/distinctUntilChanged", ["rxjs/Subscriber", "rxjs/
   return module.exports;
 });
 
-System.register("rxjs/operator/distinctUntilKeyChanged", ["rxjs/operator/distinctUntilChanged"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var distinctUntilChanged_1 = require("rxjs/operator/distinctUntilChanged");
-  function distinctUntilKeyChanged(key, compare) {
-    return distinctUntilChanged_1.distinctUntilChanged.call(this, function(x, y) {
-      if (compare) {
-        return compare(x[key], y[key]);
-      }
-      return x[key] === y[key];
-    });
-  }
-  exports.distinctUntilKeyChanged = distinctUntilKeyChanged;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/operator/do", ["rxjs/Subscriber"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -5060,164 +4210,6 @@ System.register("rxjs/operator/do", ["rxjs/Subscriber"], true, function(require,
     };
     return DoSubscriber;
   }(Subscriber_1.Subscriber));
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/operator/exhaust", ["rxjs/OuterSubscriber", "rxjs/util/subscribeToResult"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var OuterSubscriber_1 = require("rxjs/OuterSubscriber");
-  var subscribeToResult_1 = require("rxjs/util/subscribeToResult");
-  function exhaust() {
-    return this.lift(new SwitchFirstOperator());
-  }
-  exports.exhaust = exhaust;
-  var SwitchFirstOperator = (function() {
-    function SwitchFirstOperator() {}
-    SwitchFirstOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new SwitchFirstSubscriber(subscriber));
-    };
-    return SwitchFirstOperator;
-  }());
-  var SwitchFirstSubscriber = (function(_super) {
-    __extends(SwitchFirstSubscriber, _super);
-    function SwitchFirstSubscriber(destination) {
-      _super.call(this, destination);
-      this.hasCompleted = false;
-      this.hasSubscription = false;
-    }
-    SwitchFirstSubscriber.prototype._next = function(value) {
-      if (!this.hasSubscription) {
-        this.hasSubscription = true;
-        this.add(subscribeToResult_1.subscribeToResult(this, value));
-      }
-    };
-    SwitchFirstSubscriber.prototype._complete = function() {
-      this.hasCompleted = true;
-      if (!this.hasSubscription) {
-        this.destination.complete();
-      }
-    };
-    SwitchFirstSubscriber.prototype.notifyComplete = function(innerSub) {
-      this.remove(innerSub);
-      this.hasSubscription = false;
-      if (this.hasCompleted) {
-        this.destination.complete();
-      }
-    };
-    return SwitchFirstSubscriber;
-  }(OuterSubscriber_1.OuterSubscriber));
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/operator/exhaustMap", ["rxjs/OuterSubscriber", "rxjs/util/subscribeToResult"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var OuterSubscriber_1 = require("rxjs/OuterSubscriber");
-  var subscribeToResult_1 = require("rxjs/util/subscribeToResult");
-  function exhaustMap(project, resultSelector) {
-    return this.lift(new SwitchFirstMapOperator(project, resultSelector));
-  }
-  exports.exhaustMap = exhaustMap;
-  var SwitchFirstMapOperator = (function() {
-    function SwitchFirstMapOperator(project, resultSelector) {
-      this.project = project;
-      this.resultSelector = resultSelector;
-    }
-    SwitchFirstMapOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new SwitchFirstMapSubscriber(subscriber, this.project, this.resultSelector));
-    };
-    return SwitchFirstMapOperator;
-  }());
-  var SwitchFirstMapSubscriber = (function(_super) {
-    __extends(SwitchFirstMapSubscriber, _super);
-    function SwitchFirstMapSubscriber(destination, project, resultSelector) {
-      _super.call(this, destination);
-      this.project = project;
-      this.resultSelector = resultSelector;
-      this.hasSubscription = false;
-      this.hasCompleted = false;
-      this.index = 0;
-    }
-    SwitchFirstMapSubscriber.prototype._next = function(value) {
-      if (!this.hasSubscription) {
-        this.tryNext(value);
-      }
-    };
-    SwitchFirstMapSubscriber.prototype.tryNext = function(value) {
-      var index = this.index++;
-      var destination = this.destination;
-      try {
-        var result = this.project(value, index);
-        this.hasSubscription = true;
-        this.add(subscribeToResult_1.subscribeToResult(this, result, value, index));
-      } catch (err) {
-        destination.error(err);
-      }
-    };
-    SwitchFirstMapSubscriber.prototype._complete = function() {
-      this.hasCompleted = true;
-      if (!this.hasSubscription) {
-        this.destination.complete();
-      }
-    };
-    SwitchFirstMapSubscriber.prototype.notifyNext = function(outerValue, innerValue, outerIndex, innerIndex, innerSub) {
-      var _a = this,
-          resultSelector = _a.resultSelector,
-          destination = _a.destination;
-      if (resultSelector) {
-        this.trySelectResult(outerValue, innerValue, outerIndex, innerIndex);
-      } else {
-        destination.next(innerValue);
-      }
-    };
-    SwitchFirstMapSubscriber.prototype.trySelectResult = function(outerValue, innerValue, outerIndex, innerIndex) {
-      var _a = this,
-          resultSelector = _a.resultSelector,
-          destination = _a.destination;
-      try {
-        var result = resultSelector(outerValue, innerValue, outerIndex, innerIndex);
-        destination.next(result);
-      } catch (err) {
-        destination.error(err);
-      }
-    };
-    SwitchFirstMapSubscriber.prototype.notifyError = function(err) {
-      this.destination.error(err);
-    };
-    SwitchFirstMapSubscriber.prototype.notifyComplete = function(innerSub) {
-      this.remove(innerSub);
-      this.hasSubscription = false;
-      if (this.hasCompleted) {
-        this.destination.complete();
-      }
-    };
-    return SwitchFirstMapSubscriber;
-  }(OuterSubscriber_1.OuterSubscriber));
   global.define = __define;
   return module.exports;
 });
@@ -5342,33 +4334,6 @@ System.register("rxjs/operator/expand", ["rxjs/util/tryCatch", "rxjs/util/errorO
   return module.exports;
 });
 
-System.register("rxjs/util/ArgumentOutOfRangeError", [], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var ArgumentOutOfRangeError = (function(_super) {
-    __extends(ArgumentOutOfRangeError, _super);
-    function ArgumentOutOfRangeError() {
-      _super.call(this, 'argument out of range');
-      this.name = 'ArgumentOutOfRangeError';
-    }
-    return ArgumentOutOfRangeError;
-  }(Error));
-  exports.ArgumentOutOfRangeError = ArgumentOutOfRangeError;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/operator/filter", ["rxjs/Subscriber"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -5441,115 +4406,27 @@ System.register("rxjs/operator/finally", ["rxjs/Subscriber", "rxjs/Subscription"
   };
   var Subscriber_1 = require("rxjs/Subscriber");
   var Subscription_1 = require("rxjs/Subscription");
-  function _finally(callback) {
-    return this.lift(new FinallyOperator(callback));
+  function _finally(finallySelector) {
+    return this.lift(new FinallyOperator(finallySelector));
   }
   exports._finally = _finally;
   var FinallyOperator = (function() {
-    function FinallyOperator(callback) {
-      this.callback = callback;
+    function FinallyOperator(finallySelector) {
+      this.finallySelector = finallySelector;
     }
     FinallyOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new FinallySubscriber(subscriber, this.callback));
+      return source._subscribe(new FinallySubscriber(subscriber, this.finallySelector));
     };
     return FinallyOperator;
   }());
   var FinallySubscriber = (function(_super) {
     __extends(FinallySubscriber, _super);
-    function FinallySubscriber(destination, callback) {
+    function FinallySubscriber(destination, finallySelector) {
       _super.call(this, destination);
-      this.add(new Subscription_1.Subscription(callback));
+      this.add(new Subscription_1.Subscription(finallySelector));
     }
     return FinallySubscriber;
   }(Subscriber_1.Subscriber));
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/operator/find", ["rxjs/Subscriber"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subscriber_1 = require("rxjs/Subscriber");
-  function find(predicate, thisArg) {
-    if (typeof predicate !== 'function') {
-      throw new TypeError('predicate is not a function');
-    }
-    return this.lift(new FindValueOperator(predicate, this, false, thisArg));
-  }
-  exports.find = find;
-  var FindValueOperator = (function() {
-    function FindValueOperator(predicate, source, yieldIndex, thisArg) {
-      this.predicate = predicate;
-      this.source = source;
-      this.yieldIndex = yieldIndex;
-      this.thisArg = thisArg;
-    }
-    FindValueOperator.prototype.call = function(observer, source) {
-      return source._subscribe(new FindValueSubscriber(observer, this.predicate, this.source, this.yieldIndex, this.thisArg));
-    };
-    return FindValueOperator;
-  }());
-  exports.FindValueOperator = FindValueOperator;
-  var FindValueSubscriber = (function(_super) {
-    __extends(FindValueSubscriber, _super);
-    function FindValueSubscriber(destination, predicate, source, yieldIndex, thisArg) {
-      _super.call(this, destination);
-      this.predicate = predicate;
-      this.source = source;
-      this.yieldIndex = yieldIndex;
-      this.thisArg = thisArg;
-      this.index = 0;
-    }
-    FindValueSubscriber.prototype.notifyComplete = function(value) {
-      var destination = this.destination;
-      destination.next(value);
-      destination.complete();
-    };
-    FindValueSubscriber.prototype._next = function(value) {
-      var _a = this,
-          predicate = _a.predicate,
-          thisArg = _a.thisArg;
-      var index = this.index++;
-      try {
-        var result = predicate.call(thisArg || this, value, index, this.source);
-        if (result) {
-          this.notifyComplete(this.yieldIndex ? index : value);
-        }
-      } catch (err) {
-        this.destination.error(err);
-      }
-    };
-    FindValueSubscriber.prototype._complete = function() {
-      this.notifyComplete(this.yieldIndex ? -1 : undefined);
-    };
-    return FindValueSubscriber;
-  }(Subscriber_1.Subscriber));
-  exports.FindValueSubscriber = FindValueSubscriber;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/operator/findIndex", ["rxjs/operator/find"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var find_1 = require("rxjs/operator/find");
-  function findIndex(predicate, thisArg) {
-    return this.lift(new find_1.FindValueOperator(predicate, this, true, thisArg));
-  }
-  exports.findIndex = findIndex;
   global.define = __define;
   return module.exports;
 });
@@ -5714,54 +4591,6 @@ System.register("rxjs/operator/ignoreElements", ["rxjs/Subscriber", "rxjs/util/n
   return module.exports;
 });
 
-System.register("rxjs/operator/isEmpty", ["rxjs/Subscriber"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subscriber_1 = require("rxjs/Subscriber");
-  function isEmpty() {
-    return this.lift(new IsEmptyOperator());
-  }
-  exports.isEmpty = isEmpty;
-  var IsEmptyOperator = (function() {
-    function IsEmptyOperator() {}
-    IsEmptyOperator.prototype.call = function(observer, source) {
-      return source._subscribe(new IsEmptySubscriber(observer));
-    };
-    return IsEmptyOperator;
-  }());
-  var IsEmptySubscriber = (function(_super) {
-    __extends(IsEmptySubscriber, _super);
-    function IsEmptySubscriber(destination) {
-      _super.call(this, destination);
-    }
-    IsEmptySubscriber.prototype.notifyComplete = function(isEmpty) {
-      var destination = this.destination;
-      destination.next(isEmpty);
-      destination.complete();
-    };
-    IsEmptySubscriber.prototype._next = function(value) {
-      this.notifyComplete(false);
-    };
-    IsEmptySubscriber.prototype._complete = function() {
-      this.notifyComplete(true);
-    };
-    return IsEmptySubscriber;
-  }(Subscriber_1.Subscriber));
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/operator/audit", ["rxjs/util/tryCatch", "rxjs/util/errorObject", "rxjs/OuterSubscriber", "rxjs/util/subscribeToResult"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -5856,28 +4685,28 @@ System.register("rxjs/operator/auditTime", ["rxjs/scheduler/async", "rxjs/Subscr
   };
   var async_1 = require("rxjs/scheduler/async");
   var Subscriber_1 = require("rxjs/Subscriber");
-  function auditTime(duration, scheduler) {
+  function auditTime(delay, scheduler) {
     if (scheduler === void 0) {
       scheduler = async_1.async;
     }
-    return this.lift(new AuditTimeOperator(duration, scheduler));
+    return this.lift(new AuditTimeOperator(delay, scheduler));
   }
   exports.auditTime = auditTime;
   var AuditTimeOperator = (function() {
-    function AuditTimeOperator(duration, scheduler) {
-      this.duration = duration;
+    function AuditTimeOperator(delay, scheduler) {
+      this.delay = delay;
       this.scheduler = scheduler;
     }
     AuditTimeOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new AuditTimeSubscriber(subscriber, this.duration, this.scheduler));
+      return source._subscribe(new AuditTimeSubscriber(subscriber, this.delay, this.scheduler));
     };
     return AuditTimeOperator;
   }());
   var AuditTimeSubscriber = (function(_super) {
     __extends(AuditTimeSubscriber, _super);
-    function AuditTimeSubscriber(destination, duration, scheduler) {
+    function AuditTimeSubscriber(destination, delay, scheduler) {
       _super.call(this, destination);
-      this.duration = duration;
+      this.delay = delay;
       this.scheduler = scheduler;
       this.hasValue = false;
     }
@@ -5885,7 +4714,7 @@ System.register("rxjs/operator/auditTime", ["rxjs/scheduler/async", "rxjs/Subscr
       this.value = value;
       this.hasValue = true;
       if (!this.throttled) {
-        this.add(this.throttled = this.scheduler.schedule(dispatchNext, this.duration, this));
+        this.add(this.throttled = this.scheduler.schedule(dispatchNext, this.delay, this));
       }
     };
     AuditTimeSubscriber.prototype.clearThrottle = function() {
@@ -6045,7 +4874,8 @@ System.register("rxjs/operator/every", ["rxjs/Subscriber"], true, function(requi
   };
   var Subscriber_1 = require("rxjs/Subscriber");
   function every(predicate, thisArg) {
-    return this.lift(new EveryOperator(predicate, thisArg, this));
+    var source = this;
+    return source.lift(new EveryOperator(predicate, thisArg, source));
   }
   exports.every = every;
   var EveryOperator = (function() {
@@ -6244,77 +5074,6 @@ System.register("rxjs/operator/materialize", ["rxjs/Subscriber", "rxjs/Notificat
   return module.exports;
 });
 
-System.register("rxjs/operator/reduce", ["rxjs/Subscriber"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subscriber_1 = require("rxjs/Subscriber");
-  function reduce(accumulator, seed) {
-    return this.lift(new ReduceOperator(accumulator, seed));
-  }
-  exports.reduce = reduce;
-  var ReduceOperator = (function() {
-    function ReduceOperator(accumulator, seed) {
-      this.accumulator = accumulator;
-      this.seed = seed;
-    }
-    ReduceOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new ReduceSubscriber(subscriber, this.accumulator, this.seed));
-    };
-    return ReduceOperator;
-  }());
-  exports.ReduceOperator = ReduceOperator;
-  var ReduceSubscriber = (function(_super) {
-    __extends(ReduceSubscriber, _super);
-    function ReduceSubscriber(destination, accumulator, seed) {
-      _super.call(this, destination);
-      this.accumulator = accumulator;
-      this.hasValue = false;
-      this.acc = seed;
-      this.accumulator = accumulator;
-      this.hasSeed = typeof seed !== 'undefined';
-    }
-    ReduceSubscriber.prototype._next = function(value) {
-      if (this.hasValue || (this.hasValue = this.hasSeed)) {
-        this._tryReduce(value);
-      } else {
-        this.acc = value;
-        this.hasValue = true;
-      }
-    };
-    ReduceSubscriber.prototype._tryReduce = function(value) {
-      var result;
-      try {
-        result = this.accumulator(this.acc, value);
-      } catch (err) {
-        this.destination.error(err);
-        return ;
-      }
-      this.acc = result;
-    };
-    ReduceSubscriber.prototype._complete = function() {
-      if (this.hasValue || this.hasSeed) {
-        this.destination.next(this.acc);
-      }
-      this.destination.complete();
-    };
-    return ReduceSubscriber;
-  }(Subscriber_1.Subscriber));
-  exports.ReduceSubscriber = ReduceSubscriber;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/add/operator/merge", ["rxjs/Observable", "rxjs/operator/merge"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -6365,297 +5124,14 @@ System.register("rxjs/add/operator/mergeMapTo", ["rxjs/Observable", "rxjs/operat
   return module.exports;
 });
 
-System.register("rxjs/operator/mergeScan", ["rxjs/util/tryCatch", "rxjs/util/errorObject", "rxjs/util/subscribeToResult", "rxjs/OuterSubscriber"], true, function(require, exports, module) {
+System.register("rxjs/add/operator/multicast", ["rxjs/Observable", "rxjs/operator/multicast"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var tryCatch_1 = require("rxjs/util/tryCatch");
-  var errorObject_1 = require("rxjs/util/errorObject");
-  var subscribeToResult_1 = require("rxjs/util/subscribeToResult");
-  var OuterSubscriber_1 = require("rxjs/OuterSubscriber");
-  function mergeScan(project, seed, concurrent) {
-    if (concurrent === void 0) {
-      concurrent = Number.POSITIVE_INFINITY;
-    }
-    return this.lift(new MergeScanOperator(project, seed, concurrent));
-  }
-  exports.mergeScan = mergeScan;
-  var MergeScanOperator = (function() {
-    function MergeScanOperator(project, seed, concurrent) {
-      this.project = project;
-      this.seed = seed;
-      this.concurrent = concurrent;
-    }
-    MergeScanOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new MergeScanSubscriber(subscriber, this.project, this.seed, this.concurrent));
-    };
-    return MergeScanOperator;
-  }());
-  exports.MergeScanOperator = MergeScanOperator;
-  var MergeScanSubscriber = (function(_super) {
-    __extends(MergeScanSubscriber, _super);
-    function MergeScanSubscriber(destination, project, acc, concurrent) {
-      _super.call(this, destination);
-      this.project = project;
-      this.acc = acc;
-      this.concurrent = concurrent;
-      this.hasValue = false;
-      this.hasCompleted = false;
-      this.buffer = [];
-      this.active = 0;
-      this.index = 0;
-    }
-    MergeScanSubscriber.prototype._next = function(value) {
-      if (this.active < this.concurrent) {
-        var index = this.index++;
-        var ish = tryCatch_1.tryCatch(this.project)(this.acc, value);
-        var destination = this.destination;
-        if (ish === errorObject_1.errorObject) {
-          destination.error(errorObject_1.errorObject.e);
-        } else {
-          this.active++;
-          this._innerSub(ish, value, index);
-        }
-      } else {
-        this.buffer.push(value);
-      }
-    };
-    MergeScanSubscriber.prototype._innerSub = function(ish, value, index) {
-      this.add(subscribeToResult_1.subscribeToResult(this, ish, value, index));
-    };
-    MergeScanSubscriber.prototype._complete = function() {
-      this.hasCompleted = true;
-      if (this.active === 0 && this.buffer.length === 0) {
-        if (this.hasValue === false) {
-          this.destination.next(this.acc);
-        }
-        this.destination.complete();
-      }
-    };
-    MergeScanSubscriber.prototype.notifyNext = function(outerValue, innerValue, outerIndex, innerIndex, innerSub) {
-      var destination = this.destination;
-      this.acc = innerValue;
-      this.hasValue = true;
-      destination.next(innerValue);
-    };
-    MergeScanSubscriber.prototype.notifyComplete = function(innerSub) {
-      var buffer = this.buffer;
-      this.remove(innerSub);
-      this.active--;
-      if (buffer.length > 0) {
-        this._next(buffer.shift());
-      } else if (this.active === 0 && this.hasCompleted) {
-        if (this.hasValue === false) {
-          this.destination.next(this.acc);
-        }
-        this.destination.complete();
-      }
-    };
-    return MergeScanSubscriber;
-  }(OuterSubscriber_1.OuterSubscriber));
-  exports.MergeScanSubscriber = MergeScanSubscriber;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/operator/min", ["rxjs/operator/reduce"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var reduce_1 = require("rxjs/operator/reduce");
-  function min(comparer) {
-    var min = (typeof comparer === 'function') ? comparer : function(x, y) {
-      return x < y ? x : y;
-    };
-    return this.lift(new reduce_1.ReduceOperator(min));
-  }
-  exports.min = min;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/observable/MulticastObservable", ["rxjs/Observable"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
   var Observable_1 = require("rxjs/Observable");
-  var MulticastObservable = (function(_super) {
-    __extends(MulticastObservable, _super);
-    function MulticastObservable(source, connectable, selector) {
-      _super.call(this);
-      this.source = source;
-      this.connectable = connectable;
-      this.selector = selector;
-    }
-    MulticastObservable.prototype._subscribe = function(subscriber) {
-      var _a = this,
-          selector = _a.selector,
-          connectable = _a.connectable;
-      var subscription = selector(connectable).subscribe(subscriber);
-      subscription.add(connectable.connect());
-      return subscription;
-    };
-    return MulticastObservable;
-  }(Observable_1.Observable));
-  exports.MulticastObservable = MulticastObservable;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/observable/ConnectableObservable", ["rxjs/Subject", "rxjs/Observable", "rxjs/Subscriber", "rxjs/Subscription"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subject_1 = require("rxjs/Subject");
-  var Observable_1 = require("rxjs/Observable");
-  var Subscriber_1 = require("rxjs/Subscriber");
-  var Subscription_1 = require("rxjs/Subscription");
-  var ConnectableObservable = (function(_super) {
-    __extends(ConnectableObservable, _super);
-    function ConnectableObservable(source, subjectFactory) {
-      _super.call(this);
-      this.source = source;
-      this.subjectFactory = subjectFactory;
-      this._refCount = 0;
-    }
-    ConnectableObservable.prototype._subscribe = function(subscriber) {
-      return this.getSubject().subscribe(subscriber);
-    };
-    ConnectableObservable.prototype.getSubject = function() {
-      var subject = this._subject;
-      if (!subject || subject.isStopped) {
-        this._subject = this.subjectFactory();
-      }
-      return this._subject;
-    };
-    ConnectableObservable.prototype.connect = function() {
-      var connection = this._connection;
-      if (!connection) {
-        connection = this._connection = new Subscription_1.Subscription();
-        connection.add(this.source.subscribe(new ConnectableSubscriber(this.getSubject(), this)));
-        if (connection.isUnsubscribed) {
-          this._connection = null;
-          connection = Subscription_1.Subscription.EMPTY;
-        } else {
-          this._connection = connection;
-        }
-      }
-      return connection;
-    };
-    ConnectableObservable.prototype.refCount = function() {
-      return this.lift(new RefCountOperator(this));
-    };
-    return ConnectableObservable;
-  }(Observable_1.Observable));
-  exports.ConnectableObservable = ConnectableObservable;
-  var ConnectableSubscriber = (function(_super) {
-    __extends(ConnectableSubscriber, _super);
-    function ConnectableSubscriber(destination, connectable) {
-      _super.call(this, destination);
-      this.connectable = connectable;
-    }
-    ConnectableSubscriber.prototype._error = function(err) {
-      this._unsubscribe();
-      _super.prototype._error.call(this, err);
-    };
-    ConnectableSubscriber.prototype._complete = function() {
-      this._unsubscribe();
-      _super.prototype._complete.call(this);
-    };
-    ConnectableSubscriber.prototype._unsubscribe = function() {
-      var connectable = this.connectable;
-      if (connectable) {
-        this.connectable = null;
-        var connection = connectable._connection;
-        connectable._refCount = 0;
-        connectable._subject = null;
-        connectable._connection = null;
-        if (connection) {
-          connection.unsubscribe();
-        }
-      }
-    };
-    return ConnectableSubscriber;
-  }(Subject_1.SubjectSubscriber));
-  var RefCountOperator = (function() {
-    function RefCountOperator(connectable) {
-      this.connectable = connectable;
-    }
-    RefCountOperator.prototype.call = function(subscriber, source) {
-      var connectable = this.connectable;
-      connectable._refCount++;
-      var refCounter = new RefCountSubscriber(subscriber, connectable);
-      var subscription = source._subscribe(refCounter);
-      if (!refCounter.isUnsubscribed) {
-        refCounter.connection = connectable.connect();
-      }
-      return subscription;
-    };
-    return RefCountOperator;
-  }());
-  var RefCountSubscriber = (function(_super) {
-    __extends(RefCountSubscriber, _super);
-    function RefCountSubscriber(destination, connectable) {
-      _super.call(this, destination);
-      this.connectable = connectable;
-    }
-    RefCountSubscriber.prototype._unsubscribe = function() {
-      var connectable = this.connectable;
-      if (!connectable) {
-        this.connection = null;
-        return ;
-      }
-      this.connectable = null;
-      var refCount = connectable._refCount;
-      if (refCount <= 0) {
-        this.connection = null;
-        return ;
-      }
-      connectable._refCount = refCount - 1;
-      if (refCount > 1) {
-        this.connection = null;
-        return ;
-      }
-      var connection = this.connection;
-      var sharedConnection = connectable._connection;
-      this.connection = null;
-      if (sharedConnection && (!connection || sharedConnection === connection)) {
-        sharedConnection.unsubscribe();
-      }
-    };
-    return RefCountSubscriber;
-  }(Subscriber_1.Subscriber));
+  var multicast_1 = require("rxjs/operator/multicast");
+  Observable_1.Observable.prototype.multicast = multicast_1.multicast;
   global.define = __define;
   return module.exports;
 });
@@ -6668,64 +5144,6 @@ System.register("rxjs/add/operator/observeOn", ["rxjs/Observable", "rxjs/operato
   var Observable_1 = require("rxjs/Observable");
   var observeOn_1 = require("rxjs/operator/observeOn");
   Observable_1.Observable.prototype.observeOn = observeOn_1.observeOn;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/onErrorResumeNext", ["rxjs/Observable", "rxjs/operator/onErrorResumeNext"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var onErrorResumeNext_1 = require("rxjs/operator/onErrorResumeNext");
-  Observable_1.Observable.prototype.onErrorResumeNext = onErrorResumeNext_1.onErrorResumeNext;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/operator/pairwise", ["rxjs/Subscriber"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subscriber_1 = require("rxjs/Subscriber");
-  function pairwise() {
-    return this.lift(new PairwiseOperator());
-  }
-  exports.pairwise = pairwise;
-  var PairwiseOperator = (function() {
-    function PairwiseOperator() {}
-    PairwiseOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new PairwiseSubscriber(subscriber));
-    };
-    return PairwiseOperator;
-  }());
-  var PairwiseSubscriber = (function(_super) {
-    __extends(PairwiseSubscriber, _super);
-    function PairwiseSubscriber(destination) {
-      _super.call(this, destination);
-      this.hasPrev = false;
-    }
-    PairwiseSubscriber.prototype._next = function(value) {
-      if (this.hasPrev) {
-        this.destination.next([this.prev, value]);
-      } else {
-        this.hasPrev = true;
-      }
-      this.prev = value;
-    };
-    return PairwiseSubscriber;
-  }(Subscriber_1.Subscriber));
   global.define = __define;
   return module.exports;
 });
@@ -6792,46 +5210,82 @@ System.register("rxjs/operator/publish", ["rxjs/Subject", "rxjs/operator/multica
   "use strict";
   var Subject_1 = require("rxjs/Subject");
   var multicast_1 = require("rxjs/operator/multicast");
-  function publish(selector) {
-    return selector ? multicast_1.multicast.call(this, function() {
-      return new Subject_1.Subject();
-    }, selector) : multicast_1.multicast.call(this, new Subject_1.Subject());
+  function publish() {
+    return multicast_1.multicast.call(this, new Subject_1.Subject());
   }
   exports.publish = publish;
   global.define = __define;
   return module.exports;
 });
 
-System.register("rxjs/util/throwError", [], true, function(require, exports, module) {
+System.register("rxjs/BehaviorSubject", ["rxjs/Subject", "rxjs/util/throwError", "rxjs/util/ObjectUnsubscribedError"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  function throwError(e) {
-    throw e;
-  }
-  exports.throwError = throwError;
+  var __extends = (this && this.__extends) || function(d, b) {
+    for (var p in b)
+      if (b.hasOwnProperty(p))
+        d[p] = b[p];
+    function __() {
+      this.constructor = d;
+    }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+  var Subject_1 = require("rxjs/Subject");
+  var throwError_1 = require("rxjs/util/throwError");
+  var ObjectUnsubscribedError_1 = require("rxjs/util/ObjectUnsubscribedError");
+  var BehaviorSubject = (function(_super) {
+    __extends(BehaviorSubject, _super);
+    function BehaviorSubject(_value) {
+      _super.call(this);
+      this._value = _value;
+    }
+    BehaviorSubject.prototype.getValue = function() {
+      if (this.hasErrored) {
+        throwError_1.throwError(this.errorValue);
+      } else if (this.isUnsubscribed) {
+        throwError_1.throwError(new ObjectUnsubscribedError_1.ObjectUnsubscribedError());
+      } else {
+        return this._value;
+      }
+    };
+    Object.defineProperty(BehaviorSubject.prototype, "value", {
+      get: function() {
+        return this.getValue();
+      },
+      enumerable: true,
+      configurable: true
+    });
+    BehaviorSubject.prototype._subscribe = function(subscriber) {
+      var subscription = _super.prototype._subscribe.call(this, subscriber);
+      if (subscription && !subscription.isUnsubscribed) {
+        subscriber.next(this._value);
+      }
+      return subscription;
+    };
+    BehaviorSubject.prototype._next = function(value) {
+      _super.prototype._next.call(this, this._value = value);
+    };
+    BehaviorSubject.prototype._error = function(err) {
+      this.hasErrored = true;
+      _super.prototype._error.call(this, this.errorValue = err);
+    };
+    return BehaviorSubject;
+  }(Subject_1.Subject));
+  exports.BehaviorSubject = BehaviorSubject;
   global.define = __define;
   return module.exports;
 });
 
-System.register("rxjs/operator/publishReplay", ["rxjs/ReplaySubject", "rxjs/operator/multicast"], true, function(require, exports, module) {
+System.register("rxjs/add/operator/publishReplay", ["rxjs/Observable", "rxjs/operator/publishReplay"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var ReplaySubject_1 = require("rxjs/ReplaySubject");
-  var multicast_1 = require("rxjs/operator/multicast");
-  function publishReplay(bufferSize, windowTime, scheduler) {
-    if (bufferSize === void 0) {
-      bufferSize = Number.POSITIVE_INFINITY;
-    }
-    if (windowTime === void 0) {
-      windowTime = Number.POSITIVE_INFINITY;
-    }
-    return multicast_1.multicast.call(this, new ReplaySubject_1.ReplaySubject(bufferSize, windowTime, scheduler));
-  }
-  exports.publishReplay = publishReplay;
+  var Observable_1 = require("rxjs/Observable");
+  var publishReplay_1 = require("rxjs/operator/publishReplay");
+  Observable_1.Observable.prototype.publishReplay = publishReplay_1.publishReplay;
   global.define = __define;
   return module.exports;
 });
@@ -6863,14 +5317,72 @@ System.register("rxjs/add/operator/race", ["rxjs/Observable", "rxjs/operator/rac
   return module.exports;
 });
 
-System.register("rxjs/add/operator/reduce", ["rxjs/Observable", "rxjs/operator/reduce"], true, function(require, exports, module) {
+System.register("rxjs/operator/reduce", ["rxjs/Subscriber"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var reduce_1 = require("rxjs/operator/reduce");
-  Observable_1.Observable.prototype.reduce = reduce_1.reduce;
+  var __extends = (this && this.__extends) || function(d, b) {
+    for (var p in b)
+      if (b.hasOwnProperty(p))
+        d[p] = b[p];
+    function __() {
+      this.constructor = d;
+    }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+  var Subscriber_1 = require("rxjs/Subscriber");
+  function reduce(project, seed) {
+    return this.lift(new ReduceOperator(project, seed));
+  }
+  exports.reduce = reduce;
+  var ReduceOperator = (function() {
+    function ReduceOperator(project, seed) {
+      this.project = project;
+      this.seed = seed;
+    }
+    ReduceOperator.prototype.call = function(subscriber, source) {
+      return source._subscribe(new ReduceSubscriber(subscriber, this.project, this.seed));
+    };
+    return ReduceOperator;
+  }());
+  exports.ReduceOperator = ReduceOperator;
+  var ReduceSubscriber = (function(_super) {
+    __extends(ReduceSubscriber, _super);
+    function ReduceSubscriber(destination, project, seed) {
+      _super.call(this, destination);
+      this.hasValue = false;
+      this.acc = seed;
+      this.project = project;
+      this.hasSeed = typeof seed !== 'undefined';
+    }
+    ReduceSubscriber.prototype._next = function(value) {
+      if (this.hasValue || (this.hasValue = this.hasSeed)) {
+        this._tryReduce(value);
+      } else {
+        this.acc = value;
+        this.hasValue = true;
+      }
+    };
+    ReduceSubscriber.prototype._tryReduce = function(value) {
+      var result;
+      try {
+        result = this.project(this.acc, value);
+      } catch (err) {
+        this.destination.error(err);
+        return ;
+      }
+      this.acc = result;
+    };
+    ReduceSubscriber.prototype._complete = function() {
+      if (this.hasValue || this.hasSeed) {
+        this.destination.next(this.acc);
+      }
+      this.destination.complete();
+    };
+    return ReduceSubscriber;
+  }(Subscriber_1.Subscriber));
+  exports.ReduceSubscriber = ReduceSubscriber;
   global.define = __define;
   return module.exports;
 });
@@ -7178,33 +5690,33 @@ System.register("rxjs/operator/sampleTime", ["rxjs/Subscriber", "rxjs/scheduler/
   };
   var Subscriber_1 = require("rxjs/Subscriber");
   var async_1 = require("rxjs/scheduler/async");
-  function sampleTime(period, scheduler) {
+  function sampleTime(delay, scheduler) {
     if (scheduler === void 0) {
       scheduler = async_1.async;
     }
-    return this.lift(new SampleTimeOperator(period, scheduler));
+    return this.lift(new SampleTimeOperator(delay, scheduler));
   }
   exports.sampleTime = sampleTime;
   var SampleTimeOperator = (function() {
-    function SampleTimeOperator(period, scheduler) {
-      this.period = period;
+    function SampleTimeOperator(delay, scheduler) {
+      this.delay = delay;
       this.scheduler = scheduler;
     }
     SampleTimeOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new SampleTimeSubscriber(subscriber, this.period, this.scheduler));
+      return source._subscribe(new SampleTimeSubscriber(subscriber, this.delay, this.scheduler));
     };
     return SampleTimeOperator;
   }());
   var SampleTimeSubscriber = (function(_super) {
     __extends(SampleTimeSubscriber, _super);
-    function SampleTimeSubscriber(destination, period, scheduler) {
+    function SampleTimeSubscriber(destination, delay, scheduler) {
       _super.call(this, destination);
-      this.period = period;
+      this.delay = delay;
       this.scheduler = scheduler;
       this.hasValue = false;
-      this.add(scheduler.schedule(dispatchNotification, period, {
+      this.add(scheduler.schedule(dispatchNotification, delay, {
         subscriber: this,
-        period: period
+        delay: delay
       }));
     }
     SampleTimeSubscriber.prototype._next = function(value) {
@@ -7221,9 +5733,9 @@ System.register("rxjs/operator/sampleTime", ["rxjs/Subscriber", "rxjs/scheduler/
   }(Subscriber_1.Subscriber));
   function dispatchNotification(state) {
     var subscriber = state.subscriber,
-        period = state.period;
+        delay = state.delay;
     subscriber.notifyNext();
-    this.schedule(state, period);
+    this.schedule(state, delay);
   }
   global.define = __define;
   return module.exports;
@@ -7263,9 +5775,9 @@ System.register("rxjs/operator/scan", ["rxjs/Subscriber"], true, function(requir
     function ScanSubscriber(destination, accumulator, seed) {
       _super.call(this, destination);
       this.accumulator = accumulator;
-      this.index = 0;
       this.accumulatorSet = false;
       this.seed = seed;
+      this.accumulator = accumulator;
       this.accumulatorSet = typeof seed !== 'undefined';
     }
     Object.defineProperty(ScanSubscriber.prototype, "seed", {
@@ -7288,10 +5800,9 @@ System.register("rxjs/operator/scan", ["rxjs/Subscriber"], true, function(requir
       }
     };
     ScanSubscriber.prototype._tryNext = function(value) {
-      var index = this.index++;
       var result;
       try {
-        result = this.accumulator(this.seed, value, index);
+        result = this.accumulator(this.seed, value);
       } catch (err) {
         this.destination.error(err);
       }
@@ -8054,7 +6565,7 @@ System.register("rxjs/operator/switchMapTo", ["rxjs/OuterSubscriber", "rxjs/util
   return module.exports;
 });
 
-System.register("rxjs/operator/take", ["rxjs/Subscriber", "rxjs/util/ArgumentOutOfRangeError", "rxjs/observable/EmptyObservable"], true, function(require, exports, module) {
+System.register("rxjs/util/ArgumentOutOfRangeError", [], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
@@ -8068,48 +6579,15 @@ System.register("rxjs/operator/take", ["rxjs/Subscriber", "rxjs/util/ArgumentOut
     }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
-  var Subscriber_1 = require("rxjs/Subscriber");
-  var ArgumentOutOfRangeError_1 = require("rxjs/util/ArgumentOutOfRangeError");
-  var EmptyObservable_1 = require("rxjs/observable/EmptyObservable");
-  function take(count) {
-    if (count === 0) {
-      return new EmptyObservable_1.EmptyObservable();
-    } else {
-      return this.lift(new TakeOperator(count));
+  var ArgumentOutOfRangeError = (function(_super) {
+    __extends(ArgumentOutOfRangeError, _super);
+    function ArgumentOutOfRangeError() {
+      _super.call(this, 'argument out of range');
+      this.name = 'ArgumentOutOfRangeError';
     }
-  }
-  exports.take = take;
-  var TakeOperator = (function() {
-    function TakeOperator(total) {
-      this.total = total;
-      if (this.total < 0) {
-        throw new ArgumentOutOfRangeError_1.ArgumentOutOfRangeError;
-      }
-    }
-    TakeOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new TakeSubscriber(subscriber, this.total));
-    };
-    return TakeOperator;
-  }());
-  var TakeSubscriber = (function(_super) {
-    __extends(TakeSubscriber, _super);
-    function TakeSubscriber(destination, total) {
-      _super.call(this, destination);
-      this.total = total;
-      this.count = 0;
-    }
-    TakeSubscriber.prototype._next = function(value) {
-      var total = this.total;
-      if (++this.count <= total) {
-        this.destination.next(value);
-        if (this.count === total) {
-          this.destination.complete();
-          this.unsubscribe();
-        }
-      }
-    };
-    return TakeSubscriber;
-  }(Subscriber_1.Subscriber));
+    return ArgumentOutOfRangeError;
+  }(Error));
+  exports.ArgumentOutOfRangeError = ArgumentOutOfRangeError;
   global.define = __define;
   return module.exports;
 });
@@ -8131,11 +6609,11 @@ System.register("rxjs/operator/takeLast", ["rxjs/Subscriber", "rxjs/util/Argumen
   var Subscriber_1 = require("rxjs/Subscriber");
   var ArgumentOutOfRangeError_1 = require("rxjs/util/ArgumentOutOfRangeError");
   var EmptyObservable_1 = require("rxjs/observable/EmptyObservable");
-  function takeLast(count) {
-    if (count === 0) {
+  function takeLast(total) {
+    if (total === 0) {
       return new EmptyObservable_1.EmptyObservable();
     } else {
-      return this.lift(new TakeLastOperator(count));
+      return this.lift(new TakeLastOperator(total));
     }
   }
   exports.takeLast = takeLast;
@@ -8386,33 +6864,33 @@ System.register("rxjs/operator/throttleTime", ["rxjs/Subscriber", "rxjs/schedule
   };
   var Subscriber_1 = require("rxjs/Subscriber");
   var async_1 = require("rxjs/scheduler/async");
-  function throttleTime(duration, scheduler) {
+  function throttleTime(delay, scheduler) {
     if (scheduler === void 0) {
       scheduler = async_1.async;
     }
-    return this.lift(new ThrottleTimeOperator(duration, scheduler));
+    return this.lift(new ThrottleTimeOperator(delay, scheduler));
   }
   exports.throttleTime = throttleTime;
   var ThrottleTimeOperator = (function() {
-    function ThrottleTimeOperator(duration, scheduler) {
-      this.duration = duration;
+    function ThrottleTimeOperator(delay, scheduler) {
+      this.delay = delay;
       this.scheduler = scheduler;
     }
     ThrottleTimeOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new ThrottleTimeSubscriber(subscriber, this.duration, this.scheduler));
+      return source._subscribe(new ThrottleTimeSubscriber(subscriber, this.delay, this.scheduler));
     };
     return ThrottleTimeOperator;
   }());
   var ThrottleTimeSubscriber = (function(_super) {
     __extends(ThrottleTimeSubscriber, _super);
-    function ThrottleTimeSubscriber(destination, duration, scheduler) {
+    function ThrottleTimeSubscriber(destination, delay, scheduler) {
       _super.call(this, destination);
-      this.duration = duration;
+      this.delay = delay;
       this.scheduler = scheduler;
     }
     ThrottleTimeSubscriber.prototype._next = function(value) {
       if (!this.throttled) {
-        this.add(this.throttled = this.scheduler.schedule(dispatchNext, this.duration, {subscriber: this}));
+        this.add(this.throttled = this.scheduler.schedule(dispatchNext, this.delay, {subscriber: this}));
         this.destination.next(value);
       }
     };
@@ -8430,67 +6908,6 @@ System.register("rxjs/operator/throttleTime", ["rxjs/Subscriber", "rxjs/schedule
     var subscriber = arg.subscriber;
     subscriber.clearThrottle();
   }
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/operator/timeInterval", ["rxjs/Subscriber", "rxjs/scheduler/async"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subscriber_1 = require("rxjs/Subscriber");
-  var async_1 = require("rxjs/scheduler/async");
-  function timeInterval(scheduler) {
-    if (scheduler === void 0) {
-      scheduler = async_1.async;
-    }
-    return this.lift(new TimeIntervalOperator(scheduler));
-  }
-  exports.timeInterval = timeInterval;
-  var TimeInterval = (function() {
-    function TimeInterval(value, interval) {
-      this.value = value;
-      this.interval = interval;
-    }
-    return TimeInterval;
-  }());
-  exports.TimeInterval = TimeInterval;
-  ;
-  var TimeIntervalOperator = (function() {
-    function TimeIntervalOperator(scheduler) {
-      this.scheduler = scheduler;
-    }
-    TimeIntervalOperator.prototype.call = function(observer, source) {
-      return source._subscribe(new TimeIntervalSubscriber(observer, this.scheduler));
-    };
-    return TimeIntervalOperator;
-  }());
-  var TimeIntervalSubscriber = (function(_super) {
-    __extends(TimeIntervalSubscriber, _super);
-    function TimeIntervalSubscriber(destination, scheduler) {
-      _super.call(this, destination);
-      this.scheduler = scheduler;
-      this.lastTime = 0;
-      this.lastTime = scheduler.now();
-    }
-    TimeIntervalSubscriber.prototype._next = function(value) {
-      var now = this.scheduler.now();
-      var span = now - this.lastTime;
-      this.lastTime = now;
-      this.destination.next(new TimeInterval(value, span));
-    };
-    return TimeIntervalSubscriber;
-  }(Subscriber_1.Subscriber));
   global.define = __define;
   return module.exports;
 });
@@ -8715,63 +7132,6 @@ System.register("rxjs/operator/timeoutWith", ["rxjs/scheduler/async", "rxjs/util
   return module.exports;
 });
 
-System.register("rxjs/operator/timestamp", ["rxjs/Subscriber", "rxjs/scheduler/async"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subscriber_1 = require("rxjs/Subscriber");
-  var async_1 = require("rxjs/scheduler/async");
-  function timestamp(scheduler) {
-    if (scheduler === void 0) {
-      scheduler = async_1.async;
-    }
-    return this.lift(new TimestampOperator(scheduler));
-  }
-  exports.timestamp = timestamp;
-  var Timestamp = (function() {
-    function Timestamp(value, timestamp) {
-      this.value = value;
-      this.timestamp = timestamp;
-    }
-    return Timestamp;
-  }());
-  exports.Timestamp = Timestamp;
-  ;
-  var TimestampOperator = (function() {
-    function TimestampOperator(scheduler) {
-      this.scheduler = scheduler;
-    }
-    TimestampOperator.prototype.call = function(observer, source) {
-      return source._subscribe(new TimestampSubscriber(observer, this.scheduler));
-    };
-    return TimestampOperator;
-  }());
-  var TimestampSubscriber = (function(_super) {
-    __extends(TimestampSubscriber, _super);
-    function TimestampSubscriber(destination, scheduler) {
-      _super.call(this, destination);
-      this.scheduler = scheduler;
-    }
-    TimestampSubscriber.prototype._next = function(value) {
-      var now = this.scheduler.now();
-      this.destination.next(new Timestamp(value, now));
-    };
-    return TimestampSubscriber;
-  }(Subscriber_1.Subscriber));
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/operator/toArray", ["rxjs/Subscriber"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -8877,21 +7237,18 @@ System.register("rxjs/operator/window", ["rxjs/Subject", "rxjs/OuterSubscriber",
       this.windowBoundaries = windowBoundaries;
     }
     WindowOperator.prototype.call = function(subscriber, source) {
-      var windowSubscriber = new WindowSubscriber(subscriber);
-      var sourceSubscription = source._subscribe(windowSubscriber);
-      if (!sourceSubscription.isUnsubscribed) {
-        windowSubscriber.add(subscribeToResult_1.subscribeToResult(windowSubscriber, this.windowBoundaries));
-      }
-      return sourceSubscription;
+      return source._subscribe(new WindowSubscriber(subscriber, this.windowBoundaries));
     };
     return WindowOperator;
   }());
   var WindowSubscriber = (function(_super) {
     __extends(WindowSubscriber, _super);
-    function WindowSubscriber(destination) {
+    function WindowSubscriber(destination, windowBoundaries) {
       _super.call(this, destination);
-      this.window = new Subject_1.Subject();
-      destination.next(this.window);
+      this.destination = destination;
+      this.windowBoundaries = windowBoundaries;
+      this.add(subscribeToResult_1.subscribeToResult(this, windowBoundaries));
+      this.openWindow();
     }
     WindowSubscriber.prototype.notifyNext = function(outerValue, innerValue, outerIndex, innerIndex, innerSub) {
       this.openWindow();
@@ -8913,9 +7270,6 @@ System.register("rxjs/operator/window", ["rxjs/Subject", "rxjs/OuterSubscriber",
       this.window.complete();
       this.destination.complete();
     };
-    WindowSubscriber.prototype._unsubscribe = function() {
-      this.window = null;
-    };
     WindowSubscriber.prototype.openWindow = function() {
       var prevWindow = this.window;
       if (prevWindow) {
@@ -8923,6 +7277,7 @@ System.register("rxjs/operator/window", ["rxjs/Subject", "rxjs/OuterSubscriber",
       }
       var destination = this.destination;
       var newWindow = this.window = new Subject_1.Subject();
+      destination.add(newWindow);
       destination.next(newWindow);
     };
     return WindowSubscriber;
@@ -8973,7 +7328,9 @@ System.register("rxjs/operator/windowCount", ["rxjs/Subscriber", "rxjs/Subject"]
       this.startWindowEvery = startWindowEvery;
       this.windows = [new Subject_1.Subject()];
       this.count = 0;
-      destination.next(this.windows[0]);
+      var firstWindow = this.windows[0];
+      destination.add(firstWindow);
+      destination.next(firstWindow);
     }
     WindowCountSubscriber.prototype._next = function(value) {
       var startWindowEvery = (this.startWindowEvery > 0) ? this.startWindowEvery : this.windowSize;
@@ -8981,40 +7338,33 @@ System.register("rxjs/operator/windowCount", ["rxjs/Subscriber", "rxjs/Subject"]
       var windowSize = this.windowSize;
       var windows = this.windows;
       var len = windows.length;
-      for (var i = 0; i < len && !this.isUnsubscribed; i++) {
+      for (var i = 0; i < len; i++) {
         windows[i].next(value);
       }
       var c = this.count - windowSize + 1;
-      if (c >= 0 && c % startWindowEvery === 0 && !this.isUnsubscribed) {
+      if (c >= 0 && c % startWindowEvery === 0) {
         windows.shift().complete();
       }
-      if (++this.count % startWindowEvery === 0 && !this.isUnsubscribed) {
+      if (++this.count % startWindowEvery === 0) {
         var window_1 = new Subject_1.Subject();
         windows.push(window_1);
+        destination.add(window_1);
         destination.next(window_1);
       }
     };
     WindowCountSubscriber.prototype._error = function(err) {
       var windows = this.windows;
-      if (windows) {
-        while (windows.length > 0 && !this.isUnsubscribed) {
-          windows.shift().error(err);
-        }
+      while (windows.length > 0) {
+        windows.shift().error(err);
       }
       this.destination.error(err);
     };
     WindowCountSubscriber.prototype._complete = function() {
       var windows = this.windows;
-      if (windows) {
-        while (windows.length > 0 && !this.isUnsubscribed) {
-          windows.shift().complete();
-        }
+      while (windows.length > 0) {
+        windows.shift().complete();
       }
       this.destination.complete();
-    };
-    WindowCountSubscriber.prototype._unsubscribe = function() {
-      this.count = 0;
-      this.windows = null;
     };
     return WindowCountSubscriber;
   }(Subscriber_1.Subscriber));
@@ -9125,6 +7475,7 @@ System.register("rxjs/operator/windowTime", ["rxjs/Subscriber", "rxjs/Subject", 
       var window = new Subject_1.Subject();
       this.windows.push(window);
       var destination = this.destination;
+      destination.add(window);
       destination.next(window);
       return window;
     };
@@ -9412,6 +7763,7 @@ System.register("rxjs/operator/windowWhen", ["rxjs/Subject", "rxjs/util/tryCatch
         this.window.error(err);
       } else {
         this.add(this.closingNotification = subscribeToResult_1.subscribeToResult(this, closingNotifier));
+        this.add(window);
       }
     };
     return WindowSubscriber;
@@ -9557,270 +7909,6 @@ System.register("rxjs/Operator", ["rxjs/Subscriber"], true, function(require, ex
   return module.exports;
 });
 
-System.register("rxjs/scheduler/VirtualTimeScheduler", ["rxjs/Subscription"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subscription_1 = require("rxjs/Subscription");
-  var VirtualTimeScheduler = (function() {
-    function VirtualTimeScheduler() {
-      this.actions = [];
-      this.active = false;
-      this.scheduledId = null;
-      this.index = 0;
-      this.sorted = false;
-      this.frame = 0;
-      this.maxFrames = 750;
-    }
-    VirtualTimeScheduler.prototype.now = function() {
-      return this.frame;
-    };
-    VirtualTimeScheduler.prototype.flush = function() {
-      var actions = this.actions;
-      var maxFrames = this.maxFrames;
-      while (actions.length > 0) {
-        var action = actions.shift();
-        this.frame = action.delay;
-        if (this.frame <= maxFrames) {
-          action.execute();
-          if (action.error) {
-            actions.length = 0;
-            this.frame = 0;
-            throw action.error;
-          }
-        } else {
-          break;
-        }
-      }
-      actions.length = 0;
-      this.frame = 0;
-    };
-    VirtualTimeScheduler.prototype.addAction = function(action) {
-      var actions = this.actions;
-      actions.push(action);
-      actions.sort(function(a, b) {
-        if (a.delay === b.delay) {
-          if (a.index === b.index) {
-            return 0;
-          } else if (a.index > b.index) {
-            return 1;
-          } else {
-            return -1;
-          }
-        } else if (a.delay > b.delay) {
-          return 1;
-        } else {
-          return -1;
-        }
-      });
-    };
-    VirtualTimeScheduler.prototype.schedule = function(work, delay, state) {
-      if (delay === void 0) {
-        delay = 0;
-      }
-      this.sorted = false;
-      return new VirtualAction(this, work, this.index++).schedule(state, delay);
-    };
-    VirtualTimeScheduler.frameTimeFactor = 10;
-    return VirtualTimeScheduler;
-  }());
-  exports.VirtualTimeScheduler = VirtualTimeScheduler;
-  var VirtualAction = (function(_super) {
-    __extends(VirtualAction, _super);
-    function VirtualAction(scheduler, work, index) {
-      _super.call(this);
-      this.scheduler = scheduler;
-      this.work = work;
-      this.index = index;
-      this.calls = 0;
-    }
-    VirtualAction.prototype.schedule = function(state, delay) {
-      if (delay === void 0) {
-        delay = 0;
-      }
-      if (this.isUnsubscribed) {
-        return this;
-      }
-      var scheduler = this.scheduler;
-      var action = null;
-      if (this.calls++ === 0) {
-        action = this;
-      } else {
-        action = new VirtualAction(scheduler, this.work, scheduler.index += 1);
-        this.add(action);
-      }
-      action.state = state;
-      action.delay = scheduler.frame + delay;
-      scheduler.addAction(action);
-      return this;
-    };
-    VirtualAction.prototype.execute = function() {
-      if (this.isUnsubscribed) {
-        throw new Error('How did did we execute a canceled Action?');
-      }
-      this.work(this.state);
-    };
-    VirtualAction.prototype.unsubscribe = function() {
-      var actions = this.scheduler.actions;
-      var index = actions.indexOf(this);
-      this.work = void 0;
-      this.state = void 0;
-      this.scheduler = void 0;
-      if (index !== -1) {
-        actions.splice(index, 1);
-      }
-      _super.prototype.unsubscribe.call(this);
-    };
-    return VirtualAction;
-  }(Subscription_1.Subscription));
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/testing/SubscriptionLog", [], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var SubscriptionLog = (function() {
-    function SubscriptionLog(subscribedFrame, unsubscribedFrame) {
-      if (unsubscribedFrame === void 0) {
-        unsubscribedFrame = Number.POSITIVE_INFINITY;
-      }
-      this.subscribedFrame = subscribedFrame;
-      this.unsubscribedFrame = unsubscribedFrame;
-    }
-    return SubscriptionLog;
-  }());
-  exports.SubscriptionLog = SubscriptionLog;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/util/applyMixins", [], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  function applyMixins(derivedCtor, baseCtors) {
-    for (var i = 0,
-        len = baseCtors.length; i < len; i++) {
-      var baseCtor = baseCtors[i];
-      var propertyKeys = Object.getOwnPropertyNames(baseCtor.prototype);
-      for (var j = 0,
-          len2 = propertyKeys.length; j < len2; j++) {
-        var name_1 = propertyKeys[j];
-        derivedCtor.prototype[name_1] = baseCtor.prototype[name_1];
-      }
-    }
-  }
-  exports.applyMixins = applyMixins;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/testing/HotObservable", ["rxjs/Subject", "rxjs/Subscription", "rxjs/testing/SubscriptionLoggable", "rxjs/util/applyMixins"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subject_1 = require("rxjs/Subject");
-  var Subscription_1 = require("rxjs/Subscription");
-  var SubscriptionLoggable_1 = require("rxjs/testing/SubscriptionLoggable");
-  var applyMixins_1 = require("rxjs/util/applyMixins");
-  var HotObservable = (function(_super) {
-    __extends(HotObservable, _super);
-    function HotObservable(messages, scheduler) {
-      _super.call(this);
-      this.messages = messages;
-      this.subscriptions = [];
-      this.scheduler = scheduler;
-    }
-    HotObservable.prototype._subscribe = function(subscriber) {
-      var subject = this;
-      var index = subject.logSubscribedFrame();
-      subscriber.add(new Subscription_1.Subscription(function() {
-        subject.logUnsubscribedFrame(index);
-      }));
-      return _super.prototype._subscribe.call(this, subscriber);
-    };
-    HotObservable.prototype.setup = function() {
-      var subject = this;
-      var messagesLength = subject.messages.length;
-      for (var i = 0; i < messagesLength; i++) {
-        (function() {
-          var message = subject.messages[i];
-          subject.scheduler.schedule(function() {
-            message.notification.observe(subject);
-          }, message.frame);
-        })();
-      }
-    };
-    return HotObservable;
-  }(Subject_1.Subject));
-  exports.HotObservable = HotObservable;
-  applyMixins_1.applyMixins(HotObservable, [SubscriptionLoggable_1.SubscriptionLoggable]);
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/util/AnimationFrame", ["rxjs/util/root"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var root_1 = require("rxjs/util/root");
-  var RequestAnimationFrameDefinition = (function() {
-    function RequestAnimationFrameDefinition(root) {
-      if (root.requestAnimationFrame) {
-        this.cancelAnimationFrame = root.cancelAnimationFrame.bind(root);
-        this.requestAnimationFrame = root.requestAnimationFrame.bind(root);
-      } else if (root.mozRequestAnimationFrame) {
-        this.cancelAnimationFrame = root.mozCancelAnimationFrame.bind(root);
-        this.requestAnimationFrame = root.mozRequestAnimationFrame.bind(root);
-      } else if (root.webkitRequestAnimationFrame) {
-        this.cancelAnimationFrame = root.webkitCancelAnimationFrame.bind(root);
-        this.requestAnimationFrame = root.webkitRequestAnimationFrame.bind(root);
-      } else if (root.msRequestAnimationFrame) {
-        this.cancelAnimationFrame = root.msCancelAnimationFrame.bind(root);
-        this.requestAnimationFrame = root.msRequestAnimationFrame.bind(root);
-      } else if (root.oRequestAnimationFrame) {
-        this.cancelAnimationFrame = root.oCancelAnimationFrame.bind(root);
-        this.requestAnimationFrame = root.oRequestAnimationFrame.bind(root);
-      } else {
-        this.cancelAnimationFrame = root.clearTimeout.bind(root);
-        this.requestAnimationFrame = function(cb) {
-          return root.setTimeout(cb, 1000 / 60);
-        };
-      }
-    }
-    return RequestAnimationFrameDefinition;
-  }());
-  exports.RequestAnimationFrameDefinition = RequestAnimationFrameDefinition;
-  exports.AnimationFrame = new RequestAnimationFrameDefinition(root_1.root);
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/util/tryCatch", ["rxjs/util/errorObject"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -9842,16 +7930,6 @@ System.register("rxjs/util/tryCatch", ["rxjs/util/errorObject"], true, function(
   }
   exports.tryCatch = tryCatch;
   ;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("symbol-observable", ["ponyfill"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  'use strict';
-  module.exports = require("ponyfill")(global || window || this);
   global.define = __define;
   return module.exports;
 });
@@ -9883,7 +7961,7 @@ System.register("rxjs/observable/BoundCallbackObservable", ["rxjs/Observable", "
       this.args = args;
       this.scheduler = scheduler;
     }
-    BoundCallbackObservable.create = function(func, selector, scheduler) {
+    BoundCallbackObservable.create = function(callbackFunc, selector, scheduler) {
       if (selector === void 0) {
         selector = undefined;
       }
@@ -9892,7 +7970,7 @@ System.register("rxjs/observable/BoundCallbackObservable", ["rxjs/Observable", "
         for (var _i = 0; _i < arguments.length; _i++) {
           args[_i - 0] = arguments[_i];
         }
-        return new BoundCallbackObservable(func, selector, args, scheduler);
+        return new BoundCallbackObservable(callbackFunc, selector, args, scheduler);
       };
     };
     BoundCallbackObservable.prototype._subscribe = function(subscriber) {
@@ -9932,62 +8010,62 @@ System.register("rxjs/observable/BoundCallbackObservable", ["rxjs/Observable", "
         }
         return subject.subscribe(subscriber);
       } else {
-        return scheduler.schedule(BoundCallbackObservable.dispatch, 0, {
+        return scheduler.schedule(dispatch, 0, {
           source: this,
           subscriber: subscriber
         });
       }
     };
-    BoundCallbackObservable.dispatch = function(state) {
-      var self = this;
-      var source = state.source,
-          subscriber = state.subscriber;
-      var callbackFunc = source.callbackFunc,
-          args = source.args,
-          scheduler = source.scheduler;
-      var subject = source.subject;
-      if (!subject) {
-        subject = source.subject = new AsyncSubject_1.AsyncSubject();
-        var handler = function handlerFn() {
-          var innerArgs = [];
-          for (var _i = 0; _i < arguments.length; _i++) {
-            innerArgs[_i - 0] = arguments[_i];
-          }
-          var source = handlerFn.source;
-          var selector = source.selector,
-              subject = source.subject;
-          if (selector) {
-            var result_2 = tryCatch_1.tryCatch(selector).apply(this, innerArgs);
-            if (result_2 === errorObject_1.errorObject) {
-              self.add(scheduler.schedule(dispatchError, 0, {
-                err: errorObject_1.errorObject.e,
-                subject: subject
-              }));
-            } else {
-              self.add(scheduler.schedule(dispatchNext, 0, {
-                value: result_2,
-                subject: subject
-              }));
-            }
-          } else {
-            var value = innerArgs.length === 1 ? innerArgs[0] : innerArgs;
-            self.add(scheduler.schedule(dispatchNext, 0, {
-              value: value,
-              subject: subject
-            }));
-          }
-        };
-        handler.source = source;
-        var result = tryCatch_1.tryCatch(callbackFunc).apply(this, args.concat(handler));
-        if (result === errorObject_1.errorObject) {
-          subject.error(errorObject_1.errorObject.e);
-        }
-      }
-      self.add(subject.subscribe(subscriber));
-    };
     return BoundCallbackObservable;
   }(Observable_1.Observable));
   exports.BoundCallbackObservable = BoundCallbackObservable;
+  function dispatch(state) {
+    var self = this;
+    var source = state.source,
+        subscriber = state.subscriber;
+    var callbackFunc = source.callbackFunc,
+        args = source.args,
+        scheduler = source.scheduler;
+    var subject = source.subject;
+    if (!subject) {
+      subject = source.subject = new AsyncSubject_1.AsyncSubject();
+      var handler = function handlerFn() {
+        var innerArgs = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+          innerArgs[_i - 0] = arguments[_i];
+        }
+        var source = handlerFn.source;
+        var selector = source.selector,
+            subject = source.subject;
+        if (selector) {
+          var result_2 = tryCatch_1.tryCatch(selector).apply(this, innerArgs);
+          if (result_2 === errorObject_1.errorObject) {
+            self.add(scheduler.schedule(dispatchError, 0, {
+              err: errorObject_1.errorObject.e,
+              subject: subject
+            }));
+          } else {
+            self.add(scheduler.schedule(dispatchNext, 0, {
+              value: result_2,
+              subject: subject
+            }));
+          }
+        } else {
+          var value = innerArgs.length === 1 ? innerArgs[0] : innerArgs;
+          self.add(scheduler.schedule(dispatchNext, 0, {
+            value: value,
+            subject: subject
+          }));
+        }
+      };
+      handler.source = source;
+      var result = tryCatch_1.tryCatch(callbackFunc).apply(this, args.concat(handler));
+      if (result === errorObject_1.errorObject) {
+        subject.error(errorObject_1.errorObject.e);
+      }
+    }
+    self.add(subject.subscribe(subscriber));
+  }
   function dispatchNext(arg) {
     var value = arg.value,
         subject = arg.subject;
@@ -10108,7 +8186,7 @@ System.register("rxjs/observable/ArrayObservable", ["rxjs/Observable", "rxjs/obs
   return module.exports;
 });
 
-System.register("rxjs/util/subscribeToResult", ["rxjs/util/root", "rxjs/util/isArray", "rxjs/util/isPromise", "rxjs/Observable", "rxjs/symbol/iterator", "rxjs/InnerSubscriber", "symbol-observable"], true, function(require, exports, module) {
+System.register("rxjs/util/subscribeToResult", ["rxjs/util/root", "rxjs/util/isArray", "rxjs/util/isPromise", "rxjs/Observable", "rxjs/symbol/iterator", "rxjs/symbol/observable", "rxjs/InnerSubscriber"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
@@ -10118,8 +8196,8 @@ System.register("rxjs/util/subscribeToResult", ["rxjs/util/root", "rxjs/util/isA
   var isPromise_1 = require("rxjs/util/isPromise");
   var Observable_1 = require("rxjs/Observable");
   var iterator_1 = require("rxjs/symbol/iterator");
+  var observable_1 = require("rxjs/symbol/observable");
   var InnerSubscriber_1 = require("rxjs/InnerSubscriber");
-  var $$observable = require("symbol-observable");
   function subscribeToResult(outerSubscriber, result, outerValue, outerIndex) {
     var destination = new InnerSubscriber_1.InnerSubscriber(outerSubscriber, outerValue, outerIndex);
     if (destination.isUnsubscribed) {
@@ -10168,8 +8246,8 @@ System.register("rxjs/util/subscribeToResult", ["rxjs/util/root", "rxjs/util/isA
       if (!destination.isUnsubscribed) {
         destination.complete();
       }
-    } else if (typeof result[$$observable] === 'function') {
-      var obs = result[$$observable]();
+    } else if (typeof result[observable_1.$$observable] === 'function') {
+      var obs = result[observable_1.$$observable]();
       if (typeof obs.subscribe !== 'function') {
         destination.error('invalid observable');
       } else {
@@ -10364,29 +8442,6 @@ System.register("rxjs/add/observable/fromPromise", ["rxjs/Observable", "rxjs/obs
   return module.exports;
 });
 
-System.register("rxjs/add/observable/generate", ["rxjs/Observable", "rxjs/observable/GenerateObservable"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var GenerateObservable_1 = require("rxjs/observable/GenerateObservable");
-  Observable_1.Observable.generate = GenerateObservable_1.GenerateObservable.create;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/observable/if", ["rxjs/observable/IfObservable"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var IfObservable_1 = require("rxjs/observable/IfObservable");
-  exports._if = IfObservable_1.IfObservable.create;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/scheduler/QueueScheduler", ["rxjs/scheduler/QueueAction", "rxjs/scheduler/FutureAction"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -10506,18 +8561,6 @@ System.register("rxjs/add/observable/of", ["rxjs/Observable", "rxjs/observable/o
   return module.exports;
 });
 
-System.register("rxjs/add/observable/onErrorResumeNext", ["rxjs/Observable", "rxjs/operator/onErrorResumeNext"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var onErrorResumeNext_1 = require("rxjs/operator/onErrorResumeNext");
-  Observable_1.Observable.onErrorResumeNext = onErrorResumeNext_1.onErrorResumeNextStatic;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/observable/range", ["rxjs/observable/RangeObservable"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -10525,17 +8568,6 @@ System.register("rxjs/observable/range", ["rxjs/observable/RangeObservable"], tr
   "use strict";
   var RangeObservable_1 = require("rxjs/observable/RangeObservable");
   exports.range = RangeObservable_1.RangeObservable.create;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/observable/using", ["rxjs/observable/UsingObservable"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var UsingObservable_1 = require("rxjs/observable/UsingObservable");
-  exports.using = UsingObservable_1.UsingObservable.create;
   global.define = __define;
   return module.exports;
 });
@@ -10640,105 +8672,6 @@ System.register("rxjs/observable/zip", ["rxjs/operator/zip"], true, function(req
   return module.exports;
 });
 
-System.register("rxjs/observable/dom/ajax", ["rxjs/observable/dom/AjaxObservable"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var AjaxObservable_1 = require("rxjs/observable/dom/AjaxObservable");
-  exports.ajax = AjaxObservable_1.AjaxObservable.create;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/ReplaySubject", ["rxjs/Subject", "rxjs/scheduler/queue", "rxjs/operator/observeOn"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subject_1 = require("rxjs/Subject");
-  var queue_1 = require("rxjs/scheduler/queue");
-  var observeOn_1 = require("rxjs/operator/observeOn");
-  var ReplaySubject = (function(_super) {
-    __extends(ReplaySubject, _super);
-    function ReplaySubject(bufferSize, windowTime, scheduler) {
-      if (bufferSize === void 0) {
-        bufferSize = Number.POSITIVE_INFINITY;
-      }
-      if (windowTime === void 0) {
-        windowTime = Number.POSITIVE_INFINITY;
-      }
-      _super.call(this);
-      this.scheduler = scheduler;
-      this._events = [];
-      this._bufferSize = bufferSize < 1 ? 1 : bufferSize;
-      this._windowTime = windowTime < 1 ? 1 : windowTime;
-    }
-    ReplaySubject.prototype.next = function(value) {
-      var now = this._getNow();
-      this._events.push(new ReplayEvent(now, value));
-      this._trimBufferThenGetEvents();
-      _super.prototype.next.call(this, value);
-    };
-    ReplaySubject.prototype._subscribe = function(subscriber) {
-      var _events = this._trimBufferThenGetEvents();
-      var scheduler = this.scheduler;
-      if (scheduler) {
-        subscriber.add(subscriber = new observeOn_1.ObserveOnSubscriber(subscriber, scheduler));
-      }
-      var len = _events.length;
-      for (var i = 0; i < len && !subscriber.isUnsubscribed; i++) {
-        subscriber.next(_events[i].value);
-      }
-      return _super.prototype._subscribe.call(this, subscriber);
-    };
-    ReplaySubject.prototype._getNow = function() {
-      return (this.scheduler || queue_1.queue).now();
-    };
-    ReplaySubject.prototype._trimBufferThenGetEvents = function() {
-      var now = this._getNow();
-      var _bufferSize = this._bufferSize;
-      var _windowTime = this._windowTime;
-      var _events = this._events;
-      var eventsCount = _events.length;
-      var spliceCount = 0;
-      while (spliceCount < eventsCount) {
-        if ((now - _events[spliceCount].time) < _windowTime) {
-          break;
-        }
-        spliceCount++;
-      }
-      if (eventsCount > _bufferSize) {
-        spliceCount = Math.max(spliceCount, eventsCount - _bufferSize);
-      }
-      if (spliceCount > 0) {
-        _events.splice(0, spliceCount);
-      }
-      return _events;
-    };
-    return ReplaySubject;
-  }(Subject_1.Subject));
-  exports.ReplaySubject = ReplaySubject;
-  var ReplayEvent = (function() {
-    function ReplayEvent(time, value) {
-      this.time = time;
-      this.value = value;
-    }
-    return ReplayEvent;
-  }());
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/add/operator/buffer", ["rxjs/Observable", "rxjs/operator/buffer"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -10799,14 +8732,112 @@ System.register("rxjs/add/operator/bufferWhen", ["rxjs/Observable", "rxjs/operat
   return module.exports;
 });
 
-System.register("rxjs/add/operator/cache", ["rxjs/Observable", "rxjs/operator/cache"], true, function(require, exports, module) {
+System.register("rxjs/ReplaySubject", ["rxjs/Subject", "rxjs/scheduler/queue", "rxjs/operator/observeOn"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var cache_1 = require("rxjs/operator/cache");
-  Observable_1.Observable.prototype.cache = cache_1.cache;
+  var __extends = (this && this.__extends) || function(d, b) {
+    for (var p in b)
+      if (b.hasOwnProperty(p))
+        d[p] = b[p];
+    function __() {
+      this.constructor = d;
+    }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+  var Subject_1 = require("rxjs/Subject");
+  var queue_1 = require("rxjs/scheduler/queue");
+  var observeOn_1 = require("rxjs/operator/observeOn");
+  var ReplaySubject = (function(_super) {
+    __extends(ReplaySubject, _super);
+    function ReplaySubject(bufferSize, windowTime, scheduler) {
+      if (bufferSize === void 0) {
+        bufferSize = Number.POSITIVE_INFINITY;
+      }
+      if (windowTime === void 0) {
+        windowTime = Number.POSITIVE_INFINITY;
+      }
+      _super.call(this);
+      this.events = [];
+      this.scheduler = scheduler;
+      this.bufferSize = bufferSize < 1 ? 1 : bufferSize;
+      this._windowTime = windowTime < 1 ? 1 : windowTime;
+    }
+    ReplaySubject.prototype._next = function(value) {
+      var now = this._getNow();
+      this.events.push(new ReplayEvent(now, value));
+      this._trimBufferThenGetEvents(now);
+      _super.prototype._next.call(this, value);
+    };
+    ReplaySubject.prototype._subscribe = function(subscriber) {
+      var events = this._trimBufferThenGetEvents(this._getNow());
+      var scheduler = this.scheduler;
+      if (scheduler) {
+        subscriber.add(subscriber = new observeOn_1.ObserveOnSubscriber(subscriber, scheduler));
+      }
+      var index = -1;
+      var len = events.length;
+      while (++index < len && !subscriber.isUnsubscribed) {
+        subscriber.next(events[index].value);
+      }
+      return _super.prototype._subscribe.call(this, subscriber);
+    };
+    ReplaySubject.prototype._getNow = function() {
+      return (this.scheduler || queue_1.queue).now();
+    };
+    ReplaySubject.prototype._trimBufferThenGetEvents = function(now) {
+      var bufferSize = this.bufferSize;
+      var _windowTime = this._windowTime;
+      var events = this.events;
+      var eventsCount = events.length;
+      var spliceCount = 0;
+      while (spliceCount < eventsCount) {
+        if ((now - events[spliceCount].time) < _windowTime) {
+          break;
+        }
+        spliceCount += 1;
+      }
+      if (eventsCount > bufferSize) {
+        spliceCount = Math.max(spliceCount, eventsCount - bufferSize);
+      }
+      if (spliceCount > 0) {
+        events.splice(0, spliceCount);
+      }
+      return events;
+    };
+    return ReplaySubject;
+  }(Subject_1.Subject));
+  exports.ReplaySubject = ReplaySubject;
+  var ReplayEvent = (function() {
+    function ReplayEvent(time, value) {
+      this.time = time;
+      this.value = value;
+    }
+    return ReplayEvent;
+  }());
+  global.define = __define;
+  return module.exports;
+});
+
+System.register("rxjs/operator/multicast", ["rxjs/observable/ConnectableObservable"], true, function(require, exports, module) {
+  var global = System.global,
+      __define = global.define;
+  global.define = undefined;
+  "use strict";
+  var ConnectableObservable_1 = require("rxjs/observable/ConnectableObservable");
+  function multicast(subjectOrSubjectFactory) {
+    var subjectFactory;
+    if (typeof subjectOrSubjectFactory === 'function') {
+      subjectFactory = subjectOrSubjectFactory;
+    } else {
+      subjectFactory = function subjectFactory() {
+        return subjectOrSubjectFactory;
+      };
+    }
+    return new ConnectableObservable_1.ConnectableObservable(this, subjectFactory);
+  }
+  exports.multicast = multicast;
   global.define = __define;
   return module.exports;
 });
@@ -10959,30 +8990,6 @@ System.register("rxjs/add/operator/delayWhen", ["rxjs/Observable", "rxjs/operato
   return module.exports;
 });
 
-System.register("rxjs/add/operator/distinct", ["rxjs/Observable", "rxjs/operator/distinct"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var distinct_1 = require("rxjs/operator/distinct");
-  Observable_1.Observable.prototype.distinct = distinct_1.distinct;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/distinctKey", ["rxjs/Observable", "rxjs/operator/distinctKey"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var distinctKey_1 = require("rxjs/operator/distinctKey");
-  Observable_1.Observable.prototype.distinctKey = distinctKey_1.distinctKey;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/add/operator/distinctUntilChanged", ["rxjs/Observable", "rxjs/operator/distinctUntilChanged"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -10991,18 +8998,6 @@ System.register("rxjs/add/operator/distinctUntilChanged", ["rxjs/Observable", "r
   var Observable_1 = require("rxjs/Observable");
   var distinctUntilChanged_1 = require("rxjs/operator/distinctUntilChanged");
   Observable_1.Observable.prototype.distinctUntilChanged = distinctUntilChanged_1.distinctUntilChanged;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/distinctUntilKeyChanged", ["rxjs/Observable", "rxjs/operator/distinctUntilKeyChanged"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var distinctUntilKeyChanged_1 = require("rxjs/operator/distinctUntilKeyChanged");
-  Observable_1.Observable.prototype.distinctUntilKeyChanged = distinctUntilKeyChanged_1.distinctUntilKeyChanged;
   global.define = __define;
   return module.exports;
 });
@@ -11019,30 +9014,6 @@ System.register("rxjs/add/operator/do", ["rxjs/Observable", "rxjs/operator/do"],
   return module.exports;
 });
 
-System.register("rxjs/add/operator/exhaust", ["rxjs/Observable", "rxjs/operator/exhaust"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var exhaust_1 = require("rxjs/operator/exhaust");
-  Observable_1.Observable.prototype.exhaust = exhaust_1.exhaust;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/exhaustMap", ["rxjs/Observable", "rxjs/operator/exhaustMap"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var exhaustMap_1 = require("rxjs/operator/exhaustMap");
-  Observable_1.Observable.prototype.exhaustMap = exhaustMap_1.exhaustMap;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/add/operator/expand", ["rxjs/Observable", "rxjs/operator/expand"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -11051,69 +9022,6 @@ System.register("rxjs/add/operator/expand", ["rxjs/Observable", "rxjs/operator/e
   var Observable_1 = require("rxjs/Observable");
   var expand_1 = require("rxjs/operator/expand");
   Observable_1.Observable.prototype.expand = expand_1.expand;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/operator/elementAt", ["rxjs/Subscriber", "rxjs/util/ArgumentOutOfRangeError"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subscriber_1 = require("rxjs/Subscriber");
-  var ArgumentOutOfRangeError_1 = require("rxjs/util/ArgumentOutOfRangeError");
-  function elementAt(index, defaultValue) {
-    return this.lift(new ElementAtOperator(index, defaultValue));
-  }
-  exports.elementAt = elementAt;
-  var ElementAtOperator = (function() {
-    function ElementAtOperator(index, defaultValue) {
-      this.index = index;
-      this.defaultValue = defaultValue;
-      if (index < 0) {
-        throw new ArgumentOutOfRangeError_1.ArgumentOutOfRangeError;
-      }
-    }
-    ElementAtOperator.prototype.call = function(subscriber, source) {
-      return source._subscribe(new ElementAtSubscriber(subscriber, this.index, this.defaultValue));
-    };
-    return ElementAtOperator;
-  }());
-  var ElementAtSubscriber = (function(_super) {
-    __extends(ElementAtSubscriber, _super);
-    function ElementAtSubscriber(destination, index, defaultValue) {
-      _super.call(this, destination);
-      this.index = index;
-      this.defaultValue = defaultValue;
-    }
-    ElementAtSubscriber.prototype._next = function(x) {
-      if (this.index-- === 0) {
-        this.destination.next(x);
-        this.destination.complete();
-      }
-    };
-    ElementAtSubscriber.prototype._complete = function() {
-      var destination = this.destination;
-      if (this.index >= 0) {
-        if (typeof this.defaultValue !== 'undefined') {
-          destination.next(this.defaultValue);
-        } else {
-          destination.error(new ArgumentOutOfRangeError_1.ArgumentOutOfRangeError);
-        }
-      }
-      destination.complete();
-    };
-    return ElementAtSubscriber;
-  }(Subscriber_1.Subscriber));
   global.define = __define;
   return module.exports;
 });
@@ -11138,30 +9046,6 @@ System.register("rxjs/add/operator/finally", ["rxjs/Observable", "rxjs/operator/
   var Observable_1 = require("rxjs/Observable");
   var finally_1 = require("rxjs/operator/finally");
   Observable_1.Observable.prototype.finally = finally_1._finally;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/find", ["rxjs/Observable", "rxjs/operator/find"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var find_1 = require("rxjs/operator/find");
-  Observable_1.Observable.prototype.find = find_1.find;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/findIndex", ["rxjs/Observable", "rxjs/operator/findIndex"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var findIndex_1 = require("rxjs/operator/findIndex");
-  Observable_1.Observable.prototype.findIndex = findIndex_1.findIndex;
   global.define = __define;
   return module.exports;
 });
@@ -11293,18 +9177,6 @@ System.register("rxjs/add/operator/ignoreElements", ["rxjs/Observable", "rxjs/op
   return module.exports;
 });
 
-System.register("rxjs/add/operator/isEmpty", ["rxjs/Observable", "rxjs/operator/isEmpty"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var isEmpty_1 = require("rxjs/operator/isEmpty");
-  Observable_1.Observable.prototype.isEmpty = isEmpty_1.isEmpty;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/add/operator/audit", ["rxjs/Observable", "rxjs/operator/audit"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -11402,83 +9274,6 @@ System.register("rxjs/add/operator/materialize", ["rxjs/Observable", "rxjs/opera
   return module.exports;
 });
 
-System.register("rxjs/operator/max", ["rxjs/operator/reduce"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var reduce_1 = require("rxjs/operator/reduce");
-  function max(comparer) {
-    var max = (typeof comparer === 'function') ? comparer : function(x, y) {
-      return x > y ? x : y;
-    };
-    return this.lift(new reduce_1.ReduceOperator(max));
-  }
-  exports.max = max;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/mergeScan", ["rxjs/Observable", "rxjs/operator/mergeScan"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var mergeScan_1 = require("rxjs/operator/mergeScan");
-  Observable_1.Observable.prototype.mergeScan = mergeScan_1.mergeScan;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/min", ["rxjs/Observable", "rxjs/operator/min"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var min_1 = require("rxjs/operator/min");
-  Observable_1.Observable.prototype.min = min_1.min;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/operator/multicast", ["rxjs/observable/MulticastObservable", "rxjs/observable/ConnectableObservable"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var MulticastObservable_1 = require("rxjs/observable/MulticastObservable");
-  var ConnectableObservable_1 = require("rxjs/observable/ConnectableObservable");
-  function multicast(subjectOrSubjectFactory, selector) {
-    var subjectFactory;
-    if (typeof subjectOrSubjectFactory === 'function') {
-      subjectFactory = subjectOrSubjectFactory;
-    } else {
-      subjectFactory = function subjectFactory() {
-        return subjectOrSubjectFactory;
-      };
-    }
-    var connectable = new ConnectableObservable_1.ConnectableObservable(this, subjectFactory);
-    return selector ? new MulticastObservable_1.MulticastObservable(this, connectable, selector) : connectable;
-  }
-  exports.multicast = multicast;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/pairwise", ["rxjs/Observable", "rxjs/operator/pairwise"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var pairwise_1 = require("rxjs/operator/pairwise");
-  Observable_1.Observable.prototype.pairwise = pairwise_1.pairwise;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/operator/partition", ["rxjs/util/not", "rxjs/operator/filter"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -11518,70 +9313,17 @@ System.register("rxjs/add/operator/publish", ["rxjs/Observable", "rxjs/operator/
   return module.exports;
 });
 
-System.register("rxjs/BehaviorSubject", ["rxjs/Subject", "rxjs/util/throwError", "rxjs/util/ObjectUnsubscribedError"], true, function(require, exports, module) {
+System.register("rxjs/operator/publishBehavior", ["rxjs/BehaviorSubject", "rxjs/operator/multicast"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subject_1 = require("rxjs/Subject");
-  var throwError_1 = require("rxjs/util/throwError");
-  var ObjectUnsubscribedError_1 = require("rxjs/util/ObjectUnsubscribedError");
-  var BehaviorSubject = (function(_super) {
-    __extends(BehaviorSubject, _super);
-    function BehaviorSubject(_value) {
-      _super.call(this);
-      this._value = _value;
-    }
-    BehaviorSubject.prototype.getValue = function() {
-      if (this.hasError) {
-        throwError_1.throwError(this.thrownError);
-      } else if (this.isUnsubscribed) {
-        throwError_1.throwError(new ObjectUnsubscribedError_1.ObjectUnsubscribedError());
-      } else {
-        return this._value;
-      }
-    };
-    Object.defineProperty(BehaviorSubject.prototype, "value", {
-      get: function() {
-        return this.getValue();
-      },
-      enumerable: true,
-      configurable: true
-    });
-    BehaviorSubject.prototype._subscribe = function(subscriber) {
-      var subscription = _super.prototype._subscribe.call(this, subscriber);
-      if (subscription && !subscription.isUnsubscribed) {
-        subscriber.next(this._value);
-      }
-      return subscription;
-    };
-    BehaviorSubject.prototype.next = function(value) {
-      _super.prototype.next.call(this, this._value = value);
-    };
-    return BehaviorSubject;
-  }(Subject_1.Subject));
-  exports.BehaviorSubject = BehaviorSubject;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/publishReplay", ["rxjs/Observable", "rxjs/operator/publishReplay"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var publishReplay_1 = require("rxjs/operator/publishReplay");
-  Observable_1.Observable.prototype.publishReplay = publishReplay_1.publishReplay;
+  var BehaviorSubject_1 = require("rxjs/BehaviorSubject");
+  var multicast_1 = require("rxjs/operator/multicast");
+  function publishBehavior(value) {
+    return multicast_1.multicast.call(this, new BehaviorSubject_1.BehaviorSubject(value));
+  }
+  exports.publishBehavior = publishBehavior;
   global.define = __define;
   return module.exports;
 });
@@ -11594,6 +9336,18 @@ System.register("rxjs/add/operator/publishLast", ["rxjs/Observable", "rxjs/opera
   var Observable_1 = require("rxjs/Observable");
   var publishLast_1 = require("rxjs/operator/publishLast");
   Observable_1.Observable.prototype.publishLast = publishLast_1.publishLast;
+  global.define = __define;
+  return module.exports;
+});
+
+System.register("rxjs/add/operator/reduce", ["rxjs/Observable", "rxjs/operator/reduce"], true, function(require, exports, module) {
+  var global = System.global,
+      __define = global.define;
+  global.define = undefined;
+  "use strict";
+  var Observable_1 = require("rxjs/Observable");
+  var reduce_1 = require("rxjs/operator/reduce");
+  Observable_1.Observable.prototype.reduce = reduce_1.reduce;
   global.define = __define;
   return module.exports;
 });
@@ -11838,14 +9592,62 @@ System.register("rxjs/add/operator/switchMapTo", ["rxjs/Observable", "rxjs/opera
   return module.exports;
 });
 
-System.register("rxjs/add/operator/take", ["rxjs/Observable", "rxjs/operator/take"], true, function(require, exports, module) {
+System.register("rxjs/operator/take", ["rxjs/Subscriber", "rxjs/util/ArgumentOutOfRangeError", "rxjs/observable/EmptyObservable"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var take_1 = require("rxjs/operator/take");
-  Observable_1.Observable.prototype.take = take_1.take;
+  var __extends = (this && this.__extends) || function(d, b) {
+    for (var p in b)
+      if (b.hasOwnProperty(p))
+        d[p] = b[p];
+    function __() {
+      this.constructor = d;
+    }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+  var Subscriber_1 = require("rxjs/Subscriber");
+  var ArgumentOutOfRangeError_1 = require("rxjs/util/ArgumentOutOfRangeError");
+  var EmptyObservable_1 = require("rxjs/observable/EmptyObservable");
+  function take(total) {
+    if (total === 0) {
+      return new EmptyObservable_1.EmptyObservable();
+    } else {
+      return this.lift(new TakeOperator(total));
+    }
+  }
+  exports.take = take;
+  var TakeOperator = (function() {
+    function TakeOperator(total) {
+      this.total = total;
+      if (this.total < 0) {
+        throw new ArgumentOutOfRangeError_1.ArgumentOutOfRangeError;
+      }
+    }
+    TakeOperator.prototype.call = function(subscriber, source) {
+      return source._subscribe(new TakeSubscriber(subscriber, this.total));
+    };
+    return TakeOperator;
+  }());
+  var TakeSubscriber = (function(_super) {
+    __extends(TakeSubscriber, _super);
+    function TakeSubscriber(destination, total) {
+      _super.call(this, destination);
+      this.total = total;
+      this.count = 0;
+    }
+    TakeSubscriber.prototype._next = function(value) {
+      var total = this.total;
+      if (++this.count <= total) {
+        this.destination.next(value);
+        if (this.count === total) {
+          this.destination.complete();
+          this.unsubscribe();
+        }
+      }
+    };
+    return TakeSubscriber;
+  }(Subscriber_1.Subscriber));
   global.define = __define;
   return module.exports;
 });
@@ -11910,18 +9712,6 @@ System.register("rxjs/add/operator/throttleTime", ["rxjs/Observable", "rxjs/oper
   return module.exports;
 });
 
-System.register("rxjs/add/operator/timeInterval", ["rxjs/Observable", "rxjs/operator/timeInterval"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var timeInterval_1 = require("rxjs/operator/timeInterval");
-  Observable_1.Observable.prototype.timeInterval = timeInterval_1.timeInterval;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/add/operator/timeout", ["rxjs/Observable", "rxjs/operator/timeout"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -11942,18 +9732,6 @@ System.register("rxjs/add/operator/timeoutWith", ["rxjs/Observable", "rxjs/opera
   var Observable_1 = require("rxjs/Observable");
   var timeoutWith_1 = require("rxjs/operator/timeoutWith");
   Observable_1.Observable.prototype.timeoutWith = timeoutWith_1.timeoutWith;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/timestamp", ["rxjs/Observable", "rxjs/operator/timestamp"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var timestamp_1 = require("rxjs/operator/timestamp");
-  Observable_1.Observable.prototype.timestamp = timestamp_1.timestamp;
   global.define = __define;
   return module.exports;
 });
@@ -12062,92 +9840,6 @@ System.register("rxjs/add/operator/zipAll", ["rxjs/Observable", "rxjs/operator/z
   var Observable_1 = require("rxjs/Observable");
   var zipAll_1 = require("rxjs/operator/zipAll");
   Observable_1.Observable.prototype.zipAll = zipAll_1.zipAll;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/testing/SubscriptionLoggable", ["rxjs/testing/SubscriptionLog"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var SubscriptionLog_1 = require("rxjs/testing/SubscriptionLog");
-  var SubscriptionLoggable = (function() {
-    function SubscriptionLoggable() {
-      this.subscriptions = [];
-    }
-    SubscriptionLoggable.prototype.logSubscribedFrame = function() {
-      this.subscriptions.push(new SubscriptionLog_1.SubscriptionLog(this.scheduler.now()));
-      return this.subscriptions.length - 1;
-    };
-    SubscriptionLoggable.prototype.logUnsubscribedFrame = function(index) {
-      var subscriptionLogs = this.subscriptions;
-      var oldSubscriptionLog = subscriptionLogs[index];
-      subscriptionLogs[index] = new SubscriptionLog_1.SubscriptionLog(oldSubscriptionLog.subscribedFrame, this.scheduler.now());
-    };
-    return SubscriptionLoggable;
-  }());
-  exports.SubscriptionLoggable = SubscriptionLoggable;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/scheduler/AnimationFrameAction", ["rxjs/scheduler/FutureAction", "rxjs/util/AnimationFrame"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var FutureAction_1 = require("rxjs/scheduler/FutureAction");
-  var AnimationFrame_1 = require("rxjs/util/AnimationFrame");
-  var AnimationFrameAction = (function(_super) {
-    __extends(AnimationFrameAction, _super);
-    function AnimationFrameAction() {
-      _super.apply(this, arguments);
-    }
-    AnimationFrameAction.prototype._schedule = function(state, delay) {
-      if (delay === void 0) {
-        delay = 0;
-      }
-      if (delay > 0) {
-        return _super.prototype._schedule.call(this, state, delay);
-      }
-      this.delay = delay;
-      this.state = state;
-      var scheduler = this.scheduler;
-      scheduler.actions.push(this);
-      if (!scheduler.scheduledId) {
-        scheduler.scheduledId = AnimationFrame_1.AnimationFrame.requestAnimationFrame(function() {
-          scheduler.scheduledId = null;
-          scheduler.flush();
-        });
-      }
-      return this;
-    };
-    AnimationFrameAction.prototype._unsubscribe = function() {
-      var scheduler = this.scheduler;
-      var scheduledId = scheduler.scheduledId,
-          actions = scheduler.actions;
-      _super.prototype._unsubscribe.call(this);
-      if (actions.length === 0) {
-        scheduler.active = false;
-        if (scheduledId != null) {
-          scheduler.scheduledId = null;
-          AnimationFrame_1.AnimationFrame.cancelAnimationFrame(scheduledId);
-        }
-      }
-    };
-    return AnimationFrameAction;
-  }(FutureAction_1.FutureAction));
-  exports.AnimationFrameAction = AnimationFrameAction;
   global.define = __define;
   return module.exports;
 });
@@ -12280,7 +9972,7 @@ System.register("rxjs/add/observable/bindNodeCallback", ["rxjs/Observable", "rxj
   return module.exports;
 });
 
-System.register("rxjs/operator/combineLatest", ["rxjs/observable/ArrayObservable", "rxjs/util/isArray", "rxjs/OuterSubscriber", "rxjs/util/subscribeToResult"], true, function(require, exports, module) {
+System.register("rxjs/operator/combineLatest", ["rxjs/observable/ArrayObservable", "rxjs/util/isArray", "rxjs/util/isScheduler", "rxjs/OuterSubscriber", "rxjs/util/subscribeToResult"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
@@ -12296,9 +9988,9 @@ System.register("rxjs/operator/combineLatest", ["rxjs/observable/ArrayObservable
   };
   var ArrayObservable_1 = require("rxjs/observable/ArrayObservable");
   var isArray_1 = require("rxjs/util/isArray");
+  var isScheduler_1 = require("rxjs/util/isScheduler");
   var OuterSubscriber_1 = require("rxjs/OuterSubscriber");
   var subscribeToResult_1 = require("rxjs/util/subscribeToResult");
-  var none = {};
   function combineLatest() {
     var observables = [];
     for (var _i = 0; _i < arguments.length; _i++) {
@@ -12315,6 +10007,25 @@ System.register("rxjs/operator/combineLatest", ["rxjs/observable/ArrayObservable
     return new ArrayObservable_1.ArrayObservable(observables).lift(new CombineLatestOperator(project));
   }
   exports.combineLatest = combineLatest;
+  function combineLatestStatic() {
+    var observables = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+      observables[_i - 0] = arguments[_i];
+    }
+    var project = null;
+    var scheduler = null;
+    if (isScheduler_1.isScheduler(observables[observables.length - 1])) {
+      scheduler = observables.pop();
+    }
+    if (typeof observables[observables.length - 1] === 'function') {
+      project = observables.pop();
+    }
+    if (observables.length === 1 && isArray_1.isArray(observables[0])) {
+      observables = observables[0];
+    }
+    return new ArrayObservable_1.ArrayObservable(observables, scheduler).lift(new CombineLatestOperator(project));
+  }
+  exports.combineLatestStatic = combineLatestStatic;
   var CombineLatestOperator = (function() {
     function CombineLatestOperator(project) {
       this.project = project;
@@ -12333,9 +10044,11 @@ System.register("rxjs/operator/combineLatest", ["rxjs/observable/ArrayObservable
       this.active = 0;
       this.values = [];
       this.observables = [];
+      this.toRespond = [];
     }
     CombineLatestSubscriber.prototype._next = function(observable) {
-      this.values.push(none);
+      var toRespond = this.toRespond;
+      toRespond.push(toRespond.length);
       this.observables.push(observable);
     };
     CombineLatestSubscriber.prototype._complete = function() {
@@ -12345,7 +10058,6 @@ System.register("rxjs/operator/combineLatest", ["rxjs/observable/ArrayObservable
         this.destination.complete();
       } else {
         this.active = len;
-        this.toRespond = len;
         for (var i = 0; i < len; i++) {
           var observable = observables[i];
           this.add(subscribeToResult_1.subscribeToResult(this, observable, observable, i));
@@ -12359,10 +10071,15 @@ System.register("rxjs/operator/combineLatest", ["rxjs/observable/ArrayObservable
     };
     CombineLatestSubscriber.prototype.notifyNext = function(outerValue, innerValue, outerIndex, innerIndex, innerSub) {
       var values = this.values;
-      var oldVal = values[outerIndex];
-      var toRespond = !this.toRespond ? 0 : oldVal === none ? --this.toRespond : this.toRespond;
       values[outerIndex] = innerValue;
-      if (toRespond === 0) {
+      var toRespond = this.toRespond;
+      if (toRespond.length > 0) {
+        var found = toRespond.indexOf(outerIndex);
+        if (found !== -1) {
+          toRespond.splice(found, 1);
+        }
+      }
+      if (toRespond.length === 0) {
         if (this.project) {
           this._tryProject(values);
         } else {
@@ -12422,7 +10139,7 @@ System.register("rxjs/add/observable/forkJoin", ["rxjs/Observable", "rxjs/observ
   return module.exports;
 });
 
-System.register("rxjs/observable/FromObservable", ["rxjs/util/isArray", "rxjs/util/isFunction", "rxjs/util/isPromise", "rxjs/util/isScheduler", "rxjs/observable/PromiseObservable", "rxjs/observable/IteratorObservable", "rxjs/observable/ArrayObservable", "rxjs/observable/ArrayLikeObservable", "rxjs/symbol/iterator", "rxjs/Observable", "rxjs/operator/observeOn", "symbol-observable"], true, function(require, exports, module) {
+System.register("rxjs/observable/FromObservable", ["rxjs/util/isArray", "rxjs/util/isFunction", "rxjs/util/isPromise", "rxjs/util/isScheduler", "rxjs/observable/PromiseObservable", "rxjs/observable/IteratorObservable", "rxjs/observable/ArrayObservable", "rxjs/observable/ArrayLikeObservable", "rxjs/symbol/observable", "rxjs/symbol/iterator", "rxjs/Observable", "rxjs/operator/observeOn"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
@@ -12444,10 +10161,10 @@ System.register("rxjs/observable/FromObservable", ["rxjs/util/isArray", "rxjs/ut
   var IteratorObservable_1 = require("rxjs/observable/IteratorObservable");
   var ArrayObservable_1 = require("rxjs/observable/ArrayObservable");
   var ArrayLikeObservable_1 = require("rxjs/observable/ArrayLikeObservable");
+  var observable_1 = require("rxjs/symbol/observable");
   var iterator_1 = require("rxjs/symbol/iterator");
   var Observable_1 = require("rxjs/Observable");
   var observeOn_1 = require("rxjs/operator/observeOn");
-  var $$observable = require("symbol-observable");
   var isArrayLike = (function(x) {
     return x && typeof x.length === 'number';
   });
@@ -12468,7 +10185,7 @@ System.register("rxjs/observable/FromObservable", ["rxjs/util/isArray", "rxjs/ut
         scheduler = mapFnOrScheduler;
       }
       if (ish != null) {
-        if (typeof ish[$$observable] === 'function') {
+        if (typeof ish[observable_1.$$observable] === 'function') {
           if (ish instanceof Observable_1.Observable && !scheduler) {
             return ish;
           }
@@ -12489,9 +10206,9 @@ System.register("rxjs/observable/FromObservable", ["rxjs/util/isArray", "rxjs/ut
       var ish = this.ish;
       var scheduler = this.scheduler;
       if (scheduler == null) {
-        return ish[$$observable]().subscribe(subscriber);
+        return ish[observable_1.$$observable]().subscribe(subscriber);
       } else {
-        return ish[$$observable]().subscribe(new observeOn_1.ObserveOnSubscriber(subscriber, scheduler, 0));
+        return ish[observable_1.$$observable]().subscribe(new observeOn_1.ObserveOnSubscriber(subscriber, scheduler, 0));
       }
     };
     return FromObservable;
@@ -12521,18 +10238,6 @@ System.register("rxjs/add/observable/fromEventPattern", ["rxjs/Observable", "rxj
   var Observable_1 = require("rxjs/Observable");
   var fromEventPattern_1 = require("rxjs/observable/fromEventPattern");
   Observable_1.Observable.fromEventPattern = fromEventPattern_1.fromEventPattern;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/observable/if", ["rxjs/Observable", "rxjs/observable/if"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var if_1 = require("rxjs/observable/if");
-  Observable_1.Observable.if = if_1._if;
   global.define = __define;
   return module.exports;
 });
@@ -12603,18 +10308,6 @@ System.register("rxjs/add/observable/range", ["rxjs/Observable", "rxjs/observabl
   return module.exports;
 });
 
-System.register("rxjs/add/observable/using", ["rxjs/Observable", "rxjs/observable/using"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var using_1 = require("rxjs/observable/using");
-  Observable_1.Observable.using = using_1.using;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/add/observable/throw", ["rxjs/Observable", "rxjs/observable/throw"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -12650,190 +10343,23 @@ System.register("rxjs/add/observable/zip", ["rxjs/Observable", "rxjs/observable/
   return module.exports;
 });
 
-System.register("rxjs/add/observable/dom/ajax", ["rxjs/Observable", "rxjs/observable/dom/ajax"], true, function(require, exports, module) {
+System.register("rxjs/operator/publishReplay", ["rxjs/ReplaySubject", "rxjs/operator/multicast"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var ajax_1 = require("rxjs/observable/dom/ajax");
-  Observable_1.Observable.ajax = ajax_1.ajax;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/observable/dom/WebSocketSubject", ["rxjs/Subject", "rxjs/Subscriber", "rxjs/Observable", "rxjs/Subscription", "rxjs/util/root", "rxjs/ReplaySubject", "rxjs/util/tryCatch", "rxjs/util/errorObject", "rxjs/util/assign"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Subject_1 = require("rxjs/Subject");
-  var Subscriber_1 = require("rxjs/Subscriber");
-  var Observable_1 = require("rxjs/Observable");
-  var Subscription_1 = require("rxjs/Subscription");
-  var root_1 = require("rxjs/util/root");
   var ReplaySubject_1 = require("rxjs/ReplaySubject");
-  var tryCatch_1 = require("rxjs/util/tryCatch");
-  var errorObject_1 = require("rxjs/util/errorObject");
-  var assign_1 = require("rxjs/util/assign");
-  var WebSocketSubject = (function(_super) {
-    __extends(WebSocketSubject, _super);
-    function WebSocketSubject(urlConfigOrSource, destination) {
-      _super.call(this);
-      this._output = new Subject_1.Subject();
-      this.WebSocketCtor = root_1.root.WebSocket;
-      if (typeof urlConfigOrSource === 'string') {
-        this.url = urlConfigOrSource;
-      } else {
-        assign_1.assign(this, urlConfigOrSource);
-      }
-      if (!this.WebSocketCtor) {
-        throw new Error('no WebSocket constructor can be found');
-      }
-      this.destination = new ReplaySubject_1.ReplaySubject();
+  var multicast_1 = require("rxjs/operator/multicast");
+  function publishReplay(bufferSize, windowTime, scheduler) {
+    if (bufferSize === void 0) {
+      bufferSize = Number.POSITIVE_INFINITY;
     }
-    WebSocketSubject.prototype.resultSelector = function(e) {
-      return JSON.parse(e.data);
-    };
-    WebSocketSubject.create = function(urlConfigOrSource) {
-      return new WebSocketSubject(urlConfigOrSource);
-    };
-    WebSocketSubject.prototype.multiplex = function(subMsg, unsubMsg, messageFilter) {
-      var self = this;
-      return new Observable_1.Observable(function(observer) {
-        var result = tryCatch_1.tryCatch(subMsg)();
-        if (result === errorObject_1.errorObject) {
-          observer.error(errorObject_1.errorObject.e);
-        } else {
-          self.next(result);
-        }
-        var subscription = self.subscribe(function(x) {
-          var result = tryCatch_1.tryCatch(messageFilter)(x);
-          if (result === errorObject_1.errorObject) {
-            observer.error(errorObject_1.errorObject.e);
-          } else if (result) {
-            observer.next(x);
-          }
-        }, function(err) {
-          return observer.error(err);
-        }, function() {
-          return observer.complete();
-        });
-        return function() {
-          var result = tryCatch_1.tryCatch(unsubMsg)();
-          if (result === errorObject_1.errorObject) {
-            observer.error(errorObject_1.errorObject.e);
-          } else {
-            self.next(result);
-          }
-          subscription.unsubscribe();
-        };
-      });
-    };
-    WebSocketSubject.prototype._connectSocket = function() {
-      var _this = this;
-      var socket = this.protocol ? new WebSocket(this.url, this.protocol) : new WebSocket(this.url);
-      this.socket = socket;
-      var subscription = new Subscription_1.Subscription(function() {
-        _this.socket = null;
-        if (socket && socket.readyState === 1) {
-          socket.close();
-        }
-      });
-      var observer = this._output;
-      socket.onopen = function(e) {
-        var openObserver = _this.openObserver;
-        if (openObserver) {
-          openObserver.next(e);
-        }
-        var queue = _this.destination;
-        _this.destination = Subscriber_1.Subscriber.create(function(x) {
-          return socket.readyState === 1 && socket.send(x);
-        }, function(e) {
-          var closingObserver = _this.closingObserver;
-          if (closingObserver) {
-            closingObserver.next(undefined);
-          }
-          if (e && e.code) {
-            socket.close(e.code, e.reason);
-          } else {
-            observer.error(new TypeError('WebSocketSubject.error must be called with an object with an error code, ' + 'and an optional reason: { code: number, reason: string }'));
-          }
-          _this.destination = new ReplaySubject_1.ReplaySubject();
-          _this.socket = null;
-        }, function() {
-          var closingObserver = _this.closingObserver;
-          if (closingObserver) {
-            closingObserver.next(undefined);
-          }
-          socket.close();
-          _this.destination = new ReplaySubject_1.ReplaySubject();
-          _this.socket = null;
-        });
-        if (queue && queue instanceof ReplaySubject_1.ReplaySubject) {
-          subscription.add(queue.subscribe(_this.destination));
-        }
-      };
-      socket.onerror = function(e) {
-        return observer.error(e);
-      };
-      socket.onclose = function(e) {
-        var closeObserver = _this.closeObserver;
-        if (closeObserver) {
-          closeObserver.next(e);
-        }
-        if (e.wasClean) {
-          observer.complete();
-        } else {
-          observer.error(e);
-        }
-      };
-      socket.onmessage = function(e) {
-        var result = tryCatch_1.tryCatch(_this.resultSelector)(e);
-        if (result === errorObject_1.errorObject) {
-          observer.error(errorObject_1.errorObject.e);
-        } else {
-          observer.next(result);
-        }
-      };
-    };
-    WebSocketSubject.prototype._subscribe = function(subscriber) {
-      var _this = this;
-      if (!this.socket) {
-        this._connectSocket();
-      }
-      var subscription = new Subscription_1.Subscription();
-      subscription.add(this._output.subscribe(subscriber));
-      subscription.add(function() {
-        var socket = _this.socket;
-        if (socket && socket.readyState === 1) {
-          socket.close();
-          _this.socket = null;
-        }
-      });
-      return subscription;
-    };
-    WebSocketSubject.prototype.unsubscribe = function() {
-      var socket = this.socket;
-      if (socket && socket.readyState === 1) {
-        socket.close();
-        this.socket = null;
-      }
-      _super.prototype.unsubscribe.call(this);
-      this.destination = new ReplaySubject_1.ReplaySubject();
-    };
-    return WebSocketSubject;
-  }(Subject_1.AnonymousSubject));
-  exports.WebSocketSubject = WebSocketSubject;
+    if (windowTime === void 0) {
+      windowTime = Number.POSITIVE_INFINITY;
+    }
+    return multicast_1.multicast.call(this, new ReplaySubject_1.ReplaySubject(bufferSize, windowTime, scheduler));
+  }
+  exports.publishReplay = publishReplay;
   global.define = __define;
   return module.exports;
 });
@@ -12858,18 +10384,6 @@ System.register("rxjs/add/operator/concatMapTo", ["rxjs/Observable", "rxjs/opera
   var Observable_1 = require("rxjs/Observable");
   var concatMapTo_1 = require("rxjs/operator/concatMapTo");
   Observable_1.Observable.prototype.concatMapTo = concatMapTo_1.concatMapTo;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/elementAt", ["rxjs/Observable", "rxjs/operator/elementAt"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var elementAt_1 = require("rxjs/operator/elementAt");
-  Observable_1.Observable.prototype.elementAt = elementAt_1.elementAt;
   global.define = __define;
   return module.exports;
 });
@@ -12925,13 +10439,15 @@ System.register("rxjs/operator/groupBy", ["rxjs/Subscriber", "rxjs/Subscription"
   var GroupBySubscriber = (function(_super) {
     __extends(GroupBySubscriber, _super);
     function GroupBySubscriber(destination, keySelector, elementSelector, durationSelector) {
-      _super.call(this, destination);
+      _super.call(this);
       this.keySelector = keySelector;
       this.elementSelector = elementSelector;
       this.durationSelector = durationSelector;
       this.groups = null;
       this.attemptedToUnsubscribe = false;
       this.count = 0;
+      this.destination = destination;
+      this.add(destination);
     }
     GroupBySubscriber.prototype._next = function(value) {
       var key;
@@ -12949,33 +10465,43 @@ System.register("rxjs/operator/groupBy", ["rxjs/Subscriber", "rxjs/Subscription"
         groups = this.groups = typeof key === 'string' ? new FastMap_1.FastMap() : new Map_1.Map();
       }
       var group = groups.get(key);
-      var element;
-      if (this.elementSelector) {
-        try {
-          element = this.elementSelector(value);
-        } catch (err) {
-          this.error(err);
-        }
-      } else {
-        element = value;
-      }
       if (!group) {
         groups.set(key, group = new Subject_1.Subject());
         var groupedObservable = new GroupedObservable(key, group, this);
-        this.destination.next(groupedObservable);
         if (this.durationSelector) {
-          var duration = void 0;
-          try {
-            duration = this.durationSelector(new GroupedObservable(key, group));
-          } catch (err) {
-            this.error(err);
-            return ;
-          }
-          this.add(duration.subscribe(new GroupDurationSubscriber(key, group, this)));
+          this._selectDuration(key, group);
         }
+        this.destination.next(groupedObservable);
       }
+      if (this.elementSelector) {
+        this._selectElement(value, group);
+      } else {
+        this.tryGroupNext(value, group);
+      }
+    };
+    GroupBySubscriber.prototype._selectElement = function(value, group) {
+      var result;
+      try {
+        result = this.elementSelector(value);
+      } catch (err) {
+        this.error(err);
+        return ;
+      }
+      this.tryGroupNext(result, group);
+    };
+    GroupBySubscriber.prototype._selectDuration = function(key, group) {
+      var duration;
+      try {
+        duration = this.durationSelector(new GroupedObservable(key, group));
+      } catch (err) {
+        this.error(err);
+        return ;
+      }
+      this.add(duration.subscribe(new GroupDurationSubscriber(key, group, this)));
+    };
+    GroupBySubscriber.prototype.tryGroupNext = function(value, group) {
       if (!group.isUnsubscribed) {
-        group.next(element);
+        group.next(value);
       }
     };
     GroupBySubscriber.prototype._error = function(err) {
@@ -13020,16 +10546,22 @@ System.register("rxjs/operator/groupBy", ["rxjs/Subscriber", "rxjs/Subscription"
       this.parent = parent;
     }
     GroupDurationSubscriber.prototype._next = function(value) {
-      this._complete();
+      this.tryComplete();
     };
     GroupDurationSubscriber.prototype._error = function(err) {
+      this.tryError(err);
+    };
+    GroupDurationSubscriber.prototype._complete = function() {
+      this.tryComplete();
+    };
+    GroupDurationSubscriber.prototype.tryError = function(err) {
       var group = this.group;
       if (!group.isUnsubscribed) {
         group.error(err);
       }
       this.parent.removeGroup(this.key);
     };
-    GroupDurationSubscriber.prototype._complete = function() {
+    GroupDurationSubscriber.prototype.tryComplete = function() {
       var group = this.group;
       if (!group.isUnsubscribed) {
         group.complete();
@@ -13083,30 +10615,6 @@ System.register("rxjs/operator/groupBy", ["rxjs/Subscriber", "rxjs/Subscription"
   return module.exports;
 });
 
-System.register("rxjs/add/operator/max", ["rxjs/Observable", "rxjs/operator/max"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var max_1 = require("rxjs/operator/max");
-  Observable_1.Observable.prototype.max = max_1.max;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/operator/multicast", ["rxjs/Observable", "rxjs/operator/multicast"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var multicast_1 = require("rxjs/operator/multicast");
-  Observable_1.Observable.prototype.multicast = multicast_1.multicast;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/add/operator/partition", ["rxjs/Observable", "rxjs/operator/partition"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -13119,17 +10627,14 @@ System.register("rxjs/add/operator/partition", ["rxjs/Observable", "rxjs/operato
   return module.exports;
 });
 
-System.register("rxjs/operator/publishBehavior", ["rxjs/BehaviorSubject", "rxjs/operator/multicast"], true, function(require, exports, module) {
+System.register("rxjs/add/operator/publishBehavior", ["rxjs/Observable", "rxjs/operator/publishBehavior"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var BehaviorSubject_1 = require("rxjs/BehaviorSubject");
-  var multicast_1 = require("rxjs/operator/multicast");
-  function publishBehavior(value) {
-    return multicast_1.multicast.call(this, new BehaviorSubject_1.BehaviorSubject(value));
-  }
-  exports.publishBehavior = publishBehavior;
+  var Observable_1 = require("rxjs/Observable");
+  var publishBehavior_1 = require("rxjs/operator/publishBehavior");
+  Observable_1.Observable.prototype.publishBehavior = publishBehavior_1.publishBehavior;
   global.define = __define;
   return module.exports;
 });
@@ -13165,94 +10670,19 @@ System.register("rxjs/scheduler/AsapScheduler", ["rxjs/scheduler/AsapAction", "r
   return module.exports;
 });
 
-System.register("rxjs/testing/ColdObservable", ["rxjs/Observable", "rxjs/Subscription", "rxjs/testing/SubscriptionLoggable", "rxjs/util/applyMixins"], true, function(require, exports, module) {
+System.register("rxjs/add/operator/take", ["rxjs/Observable", "rxjs/operator/take"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
   var Observable_1 = require("rxjs/Observable");
-  var Subscription_1 = require("rxjs/Subscription");
-  var SubscriptionLoggable_1 = require("rxjs/testing/SubscriptionLoggable");
-  var applyMixins_1 = require("rxjs/util/applyMixins");
-  var ColdObservable = (function(_super) {
-    __extends(ColdObservable, _super);
-    function ColdObservable(messages, scheduler) {
-      _super.call(this, function(subscriber) {
-        var observable = this;
-        var index = observable.logSubscribedFrame();
-        subscriber.add(new Subscription_1.Subscription(function() {
-          observable.logUnsubscribedFrame(index);
-        }));
-        observable.scheduleMessages(subscriber);
-        return subscriber;
-      });
-      this.messages = messages;
-      this.subscriptions = [];
-      this.scheduler = scheduler;
-    }
-    ColdObservable.prototype.scheduleMessages = function(subscriber) {
-      var messagesLength = this.messages.length;
-      for (var i = 0; i < messagesLength; i++) {
-        var message = this.messages[i];
-        subscriber.add(this.scheduler.schedule(function(_a) {
-          var message = _a.message,
-              subscriber = _a.subscriber;
-          message.notification.observe(subscriber);
-        }, message.frame, {
-          message: message,
-          subscriber: subscriber
-        }));
-      }
-    };
-    return ColdObservable;
-  }(Observable_1.Observable));
-  exports.ColdObservable = ColdObservable;
-  applyMixins_1.applyMixins(ColdObservable, [SubscriptionLoggable_1.SubscriptionLoggable]);
+  var take_1 = require("rxjs/operator/take");
+  Observable_1.Observable.prototype.take = take_1.take;
   global.define = __define;
   return module.exports;
 });
 
-System.register("rxjs/scheduler/AnimationFrameScheduler", ["rxjs/scheduler/QueueScheduler", "rxjs/scheduler/AnimationFrameAction"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var QueueScheduler_1 = require("rxjs/scheduler/QueueScheduler");
-  var AnimationFrameAction_1 = require("rxjs/scheduler/AnimationFrameAction");
-  var AnimationFrameScheduler = (function(_super) {
-    __extends(AnimationFrameScheduler, _super);
-    function AnimationFrameScheduler() {
-      _super.apply(this, arguments);
-    }
-    AnimationFrameScheduler.prototype.scheduleNow = function(work, state) {
-      return new AnimationFrameAction_1.AnimationFrameAction(this, work).schedule(state);
-    };
-    return AnimationFrameScheduler;
-  }(QueueScheduler_1.QueueScheduler));
-  exports.AnimationFrameScheduler = AnimationFrameScheduler;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/Subscriber", ["rxjs/util/isFunction", "rxjs/Subscription", "rxjs/Observer", "rxjs/symbol/rxSubscriber"], true, function(require, exports, module) {
+System.register("rxjs/Subscriber", ["rxjs/util/isFunction", "rxjs/Subscription", "rxjs/symbol/rxSubscriber", "rxjs/Observer"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
@@ -13268,8 +10698,8 @@ System.register("rxjs/Subscriber", ["rxjs/util/isFunction", "rxjs/Subscription",
   };
   var isFunction_1 = require("rxjs/util/isFunction");
   var Subscription_1 = require("rxjs/Subscription");
-  var Observer_1 = require("rxjs/Observer");
   var rxSubscriber_1 = require("rxjs/symbol/rxSubscriber");
+  var Observer_1 = require("rxjs/Observer");
   var Subscriber = (function(_super) {
     __extends(Subscriber, _super);
     function Subscriber(destinationOrNext, error, complete) {
@@ -13303,9 +10733,6 @@ System.register("rxjs/Subscriber", ["rxjs/util/isFunction", "rxjs/Subscription",
           break;
       }
     }
-    Subscriber.prototype[rxSubscriber_1.$$rxSubscriber] = function() {
-      return this;
-    };
     Subscriber.create = function(next, error, complete) {
       var subscriber = new Subscriber(next, error, complete);
       subscriber.syncErrorThrowable = false;
@@ -13345,6 +10772,9 @@ System.register("rxjs/Subscriber", ["rxjs/util/isFunction", "rxjs/Subscription",
     Subscriber.prototype._complete = function() {
       this.destination.complete();
       this.unsubscribe();
+    };
+    Subscriber.prototype[rxSubscriber_1.$$rxSubscriber] = function() {
+      return this;
     };
     return Subscriber;
   }(Subscription_1.Subscription));
@@ -13462,34 +10892,14 @@ System.register("rxjs/add/observable/bindCallback", ["rxjs/Observable", "rxjs/ob
   return module.exports;
 });
 
-System.register("rxjs/observable/combineLatest", ["rxjs/util/isScheduler", "rxjs/util/isArray", "rxjs/observable/ArrayObservable", "rxjs/operator/combineLatest"], true, function(require, exports, module) {
+System.register("rxjs/add/observable/combineLatest", ["rxjs/Observable", "rxjs/operator/combineLatest"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var isScheduler_1 = require("rxjs/util/isScheduler");
-  var isArray_1 = require("rxjs/util/isArray");
-  var ArrayObservable_1 = require("rxjs/observable/ArrayObservable");
+  var Observable_1 = require("rxjs/Observable");
   var combineLatest_1 = require("rxjs/operator/combineLatest");
-  function combineLatest() {
-    var observables = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-      observables[_i - 0] = arguments[_i];
-    }
-    var project = null;
-    var scheduler = null;
-    if (isScheduler_1.isScheduler(observables[observables.length - 1])) {
-      scheduler = observables.pop();
-    }
-    if (typeof observables[observables.length - 1] === 'function') {
-      project = observables.pop();
-    }
-    if (observables.length === 1 && isArray_1.isArray(observables[0])) {
-      observables = observables[0];
-    }
-    return new ArrayObservable_1.ArrayObservable(observables, scheduler).lift(new combineLatest_1.CombineLatestOperator(project));
-  }
-  exports.combineLatest = combineLatest;
+  Observable_1.Observable.combineLatest = combineLatest_1.combineLatestStatic;
   global.define = __define;
   return module.exports;
 });
@@ -13552,13 +10962,22 @@ System.register("rxjs/add/observable/timer", ["rxjs/Observable", "rxjs/observabl
   return module.exports;
 });
 
-System.register("rxjs/observable/dom/webSocket", ["rxjs/observable/dom/WebSocketSubject"], true, function(require, exports, module) {
+System.register("rxjs/operator/cache", ["rxjs/operator/publishReplay"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
-  var WebSocketSubject_1 = require("rxjs/observable/dom/WebSocketSubject");
-  exports.webSocket = WebSocketSubject_1.WebSocketSubject.create;
+  var publishReplay_1 = require("rxjs/operator/publishReplay");
+  function cache(bufferSize, windowTime, scheduler) {
+    if (bufferSize === void 0) {
+      bufferSize = Number.POSITIVE_INFINITY;
+    }
+    if (windowTime === void 0) {
+      windowTime = Number.POSITIVE_INFINITY;
+    }
+    return publishReplay_1.publishReplay.call(this, bufferSize, windowTime, scheduler).refCount();
+  }
+  exports.cache = cache;
   global.define = __define;
   return module.exports;
 });
@@ -13575,18 +10994,6 @@ System.register("rxjs/add/operator/groupBy", ["rxjs/Observable", "rxjs/operator/
   return module.exports;
 });
 
-System.register("rxjs/add/operator/publishBehavior", ["rxjs/Observable", "rxjs/operator/publishBehavior"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var publishBehavior_1 = require("rxjs/operator/publishBehavior");
-  Observable_1.Observable.prototype.publishBehavior = publishBehavior_1.publishBehavior;
-  global.define = __define;
-  return module.exports;
-});
-
 System.register("rxjs/scheduler/asap", ["rxjs/scheduler/AsapScheduler"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
@@ -13594,273 +11001,6 @@ System.register("rxjs/scheduler/asap", ["rxjs/scheduler/AsapScheduler"], true, f
   "use strict";
   var AsapScheduler_1 = require("rxjs/scheduler/AsapScheduler");
   exports.asap = new AsapScheduler_1.AsapScheduler();
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/testing/TestScheduler", ["rxjs/Observable", "rxjs/scheduler/VirtualTimeScheduler", "rxjs/Notification", "rxjs/testing/ColdObservable", "rxjs/testing/HotObservable", "rxjs/testing/SubscriptionLog"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var __extends = (this && this.__extends) || function(d, b) {
-    for (var p in b)
-      if (b.hasOwnProperty(p))
-        d[p] = b[p];
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var Observable_1 = require("rxjs/Observable");
-  var VirtualTimeScheduler_1 = require("rxjs/scheduler/VirtualTimeScheduler");
-  var Notification_1 = require("rxjs/Notification");
-  var ColdObservable_1 = require("rxjs/testing/ColdObservable");
-  var HotObservable_1 = require("rxjs/testing/HotObservable");
-  var SubscriptionLog_1 = require("rxjs/testing/SubscriptionLog");
-  var TestScheduler = (function(_super) {
-    __extends(TestScheduler, _super);
-    function TestScheduler(assertDeepEqual) {
-      _super.call(this);
-      this.assertDeepEqual = assertDeepEqual;
-      this.hotObservables = [];
-      this.coldObservables = [];
-      this.flushTests = [];
-    }
-    TestScheduler.prototype.createTime = function(marbles) {
-      var indexOf = marbles.indexOf('|');
-      if (indexOf === -1) {
-        throw new Error('Marble diagram for time should have a completion marker "|"');
-      }
-      return indexOf * TestScheduler.frameTimeFactor;
-    };
-    TestScheduler.prototype.createColdObservable = function(marbles, values, error) {
-      if (marbles.indexOf('^') !== -1) {
-        throw new Error('Cold observable cannot have subscription offset "^"');
-      }
-      if (marbles.indexOf('!') !== -1) {
-        throw new Error('Cold observable cannot have unsubscription marker "!"');
-      }
-      var messages = TestScheduler.parseMarbles(marbles, values, error);
-      var cold = new ColdObservable_1.ColdObservable(messages, this);
-      this.coldObservables.push(cold);
-      return cold;
-    };
-    TestScheduler.prototype.createHotObservable = function(marbles, values, error) {
-      if (marbles.indexOf('!') !== -1) {
-        throw new Error('Hot observable cannot have unsubscription marker "!"');
-      }
-      var messages = TestScheduler.parseMarbles(marbles, values, error);
-      var subject = new HotObservable_1.HotObservable(messages, this);
-      this.hotObservables.push(subject);
-      return subject;
-    };
-    TestScheduler.prototype.materializeInnerObservable = function(observable, outerFrame) {
-      var _this = this;
-      var messages = [];
-      observable.subscribe(function(value) {
-        messages.push({
-          frame: _this.frame - outerFrame,
-          notification: Notification_1.Notification.createNext(value)
-        });
-      }, function(err) {
-        messages.push({
-          frame: _this.frame - outerFrame,
-          notification: Notification_1.Notification.createError(err)
-        });
-      }, function() {
-        messages.push({
-          frame: _this.frame - outerFrame,
-          notification: Notification_1.Notification.createComplete()
-        });
-      });
-      return messages;
-    };
-    TestScheduler.prototype.expectObservable = function(observable, unsubscriptionMarbles) {
-      var _this = this;
-      if (unsubscriptionMarbles === void 0) {
-        unsubscriptionMarbles = null;
-      }
-      var actual = [];
-      var flushTest = {
-        actual: actual,
-        ready: false
-      };
-      var unsubscriptionFrame = TestScheduler.parseMarblesAsSubscriptions(unsubscriptionMarbles).unsubscribedFrame;
-      var subscription;
-      this.schedule(function() {
-        subscription = observable.subscribe(function(x) {
-          var value = x;
-          if (x instanceof Observable_1.Observable) {
-            value = _this.materializeInnerObservable(value, _this.frame);
-          }
-          actual.push({
-            frame: _this.frame,
-            notification: Notification_1.Notification.createNext(value)
-          });
-        }, function(err) {
-          actual.push({
-            frame: _this.frame,
-            notification: Notification_1.Notification.createError(err)
-          });
-        }, function() {
-          actual.push({
-            frame: _this.frame,
-            notification: Notification_1.Notification.createComplete()
-          });
-        });
-      }, 0);
-      if (unsubscriptionFrame !== Number.POSITIVE_INFINITY) {
-        this.schedule(function() {
-          return subscription.unsubscribe();
-        }, unsubscriptionFrame);
-      }
-      this.flushTests.push(flushTest);
-      return {toBe: function(marbles, values, errorValue) {
-          flushTest.ready = true;
-          flushTest.expected = TestScheduler.parseMarbles(marbles, values, errorValue, true);
-        }};
-    };
-    TestScheduler.prototype.expectSubscriptions = function(actualSubscriptionLogs) {
-      var flushTest = {
-        actual: actualSubscriptionLogs,
-        ready: false
-      };
-      this.flushTests.push(flushTest);
-      return {toBe: function(marbles) {
-          var marblesArray = (typeof marbles === 'string') ? [marbles] : marbles;
-          flushTest.ready = true;
-          flushTest.expected = marblesArray.map(function(marbles) {
-            return TestScheduler.parseMarblesAsSubscriptions(marbles);
-          });
-        }};
-    };
-    TestScheduler.prototype.flush = function() {
-      var hotObservables = this.hotObservables;
-      while (hotObservables.length > 0) {
-        hotObservables.shift().setup();
-      }
-      _super.prototype.flush.call(this);
-      var readyFlushTests = this.flushTests.filter(function(test) {
-        return test.ready;
-      });
-      while (readyFlushTests.length > 0) {
-        var test = readyFlushTests.shift();
-        this.assertDeepEqual(test.actual, test.expected);
-      }
-    };
-    TestScheduler.parseMarblesAsSubscriptions = function(marbles) {
-      if (typeof marbles !== 'string') {
-        return new SubscriptionLog_1.SubscriptionLog(Number.POSITIVE_INFINITY);
-      }
-      var len = marbles.length;
-      var groupStart = -1;
-      var subscriptionFrame = Number.POSITIVE_INFINITY;
-      var unsubscriptionFrame = Number.POSITIVE_INFINITY;
-      for (var i = 0; i < len; i++) {
-        var frame = i * this.frameTimeFactor;
-        var c = marbles[i];
-        switch (c) {
-          case '-':
-          case ' ':
-            break;
-          case '(':
-            groupStart = frame;
-            break;
-          case ')':
-            groupStart = -1;
-            break;
-          case '^':
-            if (subscriptionFrame !== Number.POSITIVE_INFINITY) {
-              throw new Error('Found a second subscription point \'^\' in a ' + 'subscription marble diagram. There can only be one.');
-            }
-            subscriptionFrame = groupStart > -1 ? groupStart : frame;
-            break;
-          case '!':
-            if (unsubscriptionFrame !== Number.POSITIVE_INFINITY) {
-              throw new Error('Found a second subscription point \'^\' in a ' + 'subscription marble diagram. There can only be one.');
-            }
-            unsubscriptionFrame = groupStart > -1 ? groupStart : frame;
-            break;
-          default:
-            throw new Error('There can only be \'^\' and \'!\' markers in a ' + 'subscription marble diagram. Found instead \'' + c + '\'.');
-        }
-      }
-      if (unsubscriptionFrame < 0) {
-        return new SubscriptionLog_1.SubscriptionLog(subscriptionFrame);
-      } else {
-        return new SubscriptionLog_1.SubscriptionLog(subscriptionFrame, unsubscriptionFrame);
-      }
-    };
-    TestScheduler.parseMarbles = function(marbles, values, errorValue, materializeInnerObservables) {
-      if (materializeInnerObservables === void 0) {
-        materializeInnerObservables = false;
-      }
-      if (marbles.indexOf('!') !== -1) {
-        throw new Error('Conventional marble diagrams cannot have the ' + 'unsubscription marker "!"');
-      }
-      var len = marbles.length;
-      var testMessages = [];
-      var subIndex = marbles.indexOf('^');
-      var frameOffset = subIndex === -1 ? 0 : (subIndex * -this.frameTimeFactor);
-      var getValue = typeof values !== 'object' ? function(x) {
-        return x;
-      } : function(x) {
-        if (materializeInnerObservables && values[x] instanceof ColdObservable_1.ColdObservable) {
-          return values[x].messages;
-        }
-        return values[x];
-      };
-      var groupStart = -1;
-      for (var i = 0; i < len; i++) {
-        var frame = i * this.frameTimeFactor + frameOffset;
-        var notification = void 0;
-        var c = marbles[i];
-        switch (c) {
-          case '-':
-          case ' ':
-            break;
-          case '(':
-            groupStart = frame;
-            break;
-          case ')':
-            groupStart = -1;
-            break;
-          case '|':
-            notification = Notification_1.Notification.createComplete();
-            break;
-          case '^':
-            break;
-          case '#':
-            notification = Notification_1.Notification.createError(errorValue || 'error');
-            break;
-          default:
-            notification = Notification_1.Notification.createNext(getValue(c));
-            break;
-        }
-        if (notification) {
-          testMessages.push({
-            frame: groupStart > -1 ? groupStart : frame,
-            notification: notification
-          });
-        }
-      }
-      return testMessages;
-    };
-    return TestScheduler;
-  }(VirtualTimeScheduler_1.VirtualTimeScheduler));
-  exports.TestScheduler = TestScheduler;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/scheduler/animationFrame", ["rxjs/scheduler/AnimationFrameScheduler"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var AnimationFrameScheduler_1 = require("rxjs/scheduler/AnimationFrameScheduler");
-  exports.animationFrame = new AnimationFrameScheduler_1.AnimationFrameScheduler();
   global.define = __define;
   return module.exports;
 });
@@ -13873,32 +11013,16 @@ System.register("rxjs/util/toSubscriber", ["rxjs/Subscriber", "rxjs/symbol/rxSub
   var Subscriber_1 = require("rxjs/Subscriber");
   var rxSubscriber_1 = require("rxjs/symbol/rxSubscriber");
   function toSubscriber(nextOrObserver, error, complete) {
-    if (nextOrObserver) {
+    if (nextOrObserver && typeof nextOrObserver === 'object') {
       if (nextOrObserver instanceof Subscriber_1.Subscriber) {
         return nextOrObserver;
-      }
-      if (nextOrObserver[rxSubscriber_1.$$rxSubscriber]) {
+      } else if (typeof nextOrObserver[rxSubscriber_1.$$rxSubscriber] === 'function') {
         return nextOrObserver[rxSubscriber_1.$$rxSubscriber]();
       }
-    }
-    if (!nextOrObserver && !error && !complete) {
-      return new Subscriber_1.Subscriber();
     }
     return new Subscriber_1.Subscriber(nextOrObserver, error, complete);
   }
   exports.toSubscriber = toSubscriber;
-  global.define = __define;
-  return module.exports;
-});
-
-System.register("rxjs/add/observable/combineLatest", ["rxjs/Observable", "rxjs/observable/combineLatest"], true, function(require, exports, module) {
-  var global = System.global,
-      __define = global.define;
-  global.define = undefined;
-  "use strict";
-  var Observable_1 = require("rxjs/Observable");
-  var combineLatest_1 = require("rxjs/observable/combineLatest");
-  Observable_1.Observable.combineLatest = combineLatest_1.combineLatest;
   global.define = __define;
   return module.exports;
 });
@@ -13988,14 +11112,14 @@ System.register("rxjs/observable/IntervalObservable", ["rxjs/util/isNumeric", "r
   return module.exports;
 });
 
-System.register("rxjs/add/observable/dom/webSocket", ["rxjs/Observable", "rxjs/observable/dom/webSocket"], true, function(require, exports, module) {
+System.register("rxjs/add/operator/cache", ["rxjs/Observable", "rxjs/operator/cache"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
   var Observable_1 = require("rxjs/Observable");
-  var webSocket_1 = require("rxjs/observable/dom/webSocket");
-  Observable_1.Observable.webSocket = webSocket_1.webSocket;
+  var cache_1 = require("rxjs/operator/cache");
+  Observable_1.Observable.prototype.cache = cache_1.cache;
   global.define = __define;
   return module.exports;
 });
@@ -14067,14 +11191,14 @@ System.register("rxjs/observable/SubscribeOnObservable", ["rxjs/Observable", "rx
   return module.exports;
 });
 
-System.register("rxjs/Observable", ["rxjs/util/root", "rxjs/util/toSubscriber", "symbol-observable"], true, function(require, exports, module) {
+System.register("rxjs/Observable", ["rxjs/util/root", "rxjs/symbol/observable", "rxjs/util/toSubscriber"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
   "use strict";
   var root_1 = require("rxjs/util/root");
+  var observable_1 = require("rxjs/symbol/observable");
   var toSubscriber_1 = require("rxjs/util/toSubscriber");
-  var $$observable = require("symbol-observable");
   var Observable = (function() {
     function Observable(subscribe) {
       this._isScalar = false;
@@ -14091,11 +11215,7 @@ System.register("rxjs/Observable", ["rxjs/util/root", "rxjs/util/toSubscriber", 
     Observable.prototype.subscribe = function(observerOrNext, error, complete) {
       var operator = this.operator;
       var sink = toSubscriber_1.toSubscriber(observerOrNext, error, complete);
-      if (operator) {
-        operator.call(sink, this);
-      } else {
-        sink.add(this._subscribe(sink));
-      }
+      sink.add(operator ? operator.call(sink, this) : this._subscribe(sink));
       if (sink.syncErrorThrowable) {
         sink.syncErrorThrowable = false;
         if (sink.syncErrorThrown) {
@@ -14134,7 +11254,7 @@ System.register("rxjs/Observable", ["rxjs/util/root", "rxjs/util/toSubscriber", 
     Observable.prototype._subscribe = function(subscriber) {
       return this.source.subscribe(subscriber);
     };
-    Observable.prototype[$$observable] = function() {
+    Observable.prototype[observable_1.$$observable] = function() {
       return this;
     };
     Observable.create = function(subscribe) {
@@ -14175,7 +11295,7 @@ System.register("rxjs/operator/subscribeOn", ["rxjs/observable/SubscribeOnObserv
   return module.exports;
 });
 
-System.register("rxjs/Subject", ["rxjs/Observable", "rxjs/Subscriber", "rxjs/Subscription", "rxjs/util/ObjectUnsubscribedError", "rxjs/SubjectSubscription", "rxjs/symbol/rxSubscriber"], true, function(require, exports, module) {
+System.register("rxjs/Subject", ["rxjs/Observable", "rxjs/Subscriber", "rxjs/Subscription", "rxjs/SubjectSubscription", "rxjs/symbol/rxSubscriber", "rxjs/util/throwError", "rxjs/util/ObjectUnsubscribedError"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
@@ -14192,143 +11312,183 @@ System.register("rxjs/Subject", ["rxjs/Observable", "rxjs/Subscriber", "rxjs/Sub
   var Observable_1 = require("rxjs/Observable");
   var Subscriber_1 = require("rxjs/Subscriber");
   var Subscription_1 = require("rxjs/Subscription");
-  var ObjectUnsubscribedError_1 = require("rxjs/util/ObjectUnsubscribedError");
   var SubjectSubscription_1 = require("rxjs/SubjectSubscription");
   var rxSubscriber_1 = require("rxjs/symbol/rxSubscriber");
-  var SubjectSubscriber = (function(_super) {
-    __extends(SubjectSubscriber, _super);
-    function SubjectSubscriber(destination) {
-      _super.call(this, destination);
-      this.destination = destination;
-    }
-    return SubjectSubscriber;
-  }(Subscriber_1.Subscriber));
-  exports.SubjectSubscriber = SubjectSubscriber;
+  var throwError_1 = require("rxjs/util/throwError");
+  var ObjectUnsubscribedError_1 = require("rxjs/util/ObjectUnsubscribedError");
   var Subject = (function(_super) {
     __extends(Subject, _super);
-    function Subject() {
+    function Subject(destination, source) {
       _super.call(this);
+      this.destination = destination;
+      this.source = source;
       this.observers = [];
       this.isUnsubscribed = false;
       this.isStopped = false;
-      this.hasError = false;
-      this.thrownError = null;
+      this.hasErrored = false;
+      this.dispatching = false;
+      this.hasCompleted = false;
+      this.source = source;
     }
-    Subject.prototype[rxSubscriber_1.$$rxSubscriber] = function() {
-      return new SubjectSubscriber(this);
-    };
     Subject.prototype.lift = function(operator) {
-      var subject = new AnonymousSubject(this, this);
+      var subject = new Subject(this.destination || this, this);
       subject.operator = operator;
       return subject;
     };
-    Subject.prototype.next = function(value) {
-      if (this.isUnsubscribed) {
-        throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-      }
-      if (!this.isStopped) {
-        var observers = this.observers;
-        var len = observers.length;
-        var copy = observers.slice();
-        for (var i = 0; i < len; i++) {
-          copy[i].next(value);
+    Subject.prototype.add = function(subscription) {
+      return Subscription_1.Subscription.prototype.add.call(this, subscription);
+    };
+    Subject.prototype.remove = function(subscription) {
+      Subscription_1.Subscription.prototype.remove.call(this, subscription);
+    };
+    Subject.prototype.unsubscribe = function() {
+      Subscription_1.Subscription.prototype.unsubscribe.call(this);
+    };
+    Subject.prototype._subscribe = function(subscriber) {
+      if (this.source) {
+        return this.source.subscribe(subscriber);
+      } else {
+        if (subscriber.isUnsubscribed) {
+          return ;
+        } else if (this.hasErrored) {
+          return subscriber.error(this.errorValue);
+        } else if (this.hasCompleted) {
+          return subscriber.complete();
         }
+        this.throwIfUnsubscribed();
+        var subscription = new SubjectSubscription_1.SubjectSubscription(this, subscriber);
+        this.observers.push(subscriber);
+        return subscription;
+      }
+    };
+    Subject.prototype._unsubscribe = function() {
+      this.source = null;
+      this.isStopped = true;
+      this.observers = null;
+      this.destination = null;
+    };
+    Subject.prototype.next = function(value) {
+      this.throwIfUnsubscribed();
+      if (this.isStopped) {
+        return ;
+      }
+      this.dispatching = true;
+      this._next(value);
+      this.dispatching = false;
+      if (this.hasErrored) {
+        this._error(this.errorValue);
+      } else if (this.hasCompleted) {
+        this._complete();
       }
     };
     Subject.prototype.error = function(err) {
-      if (this.isUnsubscribed) {
-        throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+      this.throwIfUnsubscribed();
+      if (this.isStopped) {
+        return ;
       }
-      this.hasError = true;
-      this.thrownError = err;
       this.isStopped = true;
-      var observers = this.observers;
-      var len = observers.length;
-      var copy = observers.slice();
-      for (var i = 0; i < len; i++) {
-        copy[i].error(err);
+      this.hasErrored = true;
+      this.errorValue = err;
+      if (this.dispatching) {
+        return ;
       }
-      this.observers.length = 0;
+      this._error(err);
     };
     Subject.prototype.complete = function() {
-      if (this.isUnsubscribed) {
-        throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+      this.throwIfUnsubscribed();
+      if (this.isStopped) {
+        return ;
       }
       this.isStopped = true;
-      var observers = this.observers;
-      var len = observers.length;
-      var copy = observers.slice();
-      for (var i = 0; i < len; i++) {
-        copy[i].complete();
+      this.hasCompleted = true;
+      if (this.dispatching) {
+        return ;
       }
-      this.observers.length = 0;
-    };
-    Subject.prototype.unsubscribe = function() {
-      this.isStopped = true;
-      this.isUnsubscribed = true;
-      this.observers = null;
-    };
-    Subject.prototype._subscribe = function(subscriber) {
-      if (this.isUnsubscribed) {
-        throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-      } else if (this.hasError) {
-        subscriber.error(this.thrownError);
-        return Subscription_1.Subscription.EMPTY;
-      } else if (this.isStopped) {
-        subscriber.complete();
-        return Subscription_1.Subscription.EMPTY;
-      } else {
-        this.observers.push(subscriber);
-        return new SubjectSubscription_1.SubjectSubscription(this, subscriber);
-      }
+      this._complete();
     };
     Subject.prototype.asObservable = function() {
-      var observable = new Observable_1.Observable();
-      observable.source = this;
+      var observable = new SubjectObservable(this);
       return observable;
     };
+    Subject.prototype._next = function(value) {
+      if (this.destination) {
+        this.destination.next(value);
+      } else {
+        this._finalNext(value);
+      }
+    };
+    Subject.prototype._finalNext = function(value) {
+      var index = -1;
+      var observers = this.observers.slice(0);
+      var len = observers.length;
+      while (++index < len) {
+        observers[index].next(value);
+      }
+    };
+    Subject.prototype._error = function(err) {
+      if (this.destination) {
+        this.destination.error(err);
+      } else {
+        this._finalError(err);
+      }
+    };
+    Subject.prototype._finalError = function(err) {
+      var index = -1;
+      var observers = this.observers;
+      this.observers = null;
+      this.isUnsubscribed = true;
+      if (observers) {
+        var len = observers.length;
+        while (++index < len) {
+          observers[index].error(err);
+        }
+      }
+      this.isUnsubscribed = false;
+      this.unsubscribe();
+    };
+    Subject.prototype._complete = function() {
+      if (this.destination) {
+        this.destination.complete();
+      } else {
+        this._finalComplete();
+      }
+    };
+    Subject.prototype._finalComplete = function() {
+      var index = -1;
+      var observers = this.observers;
+      this.observers = null;
+      this.isUnsubscribed = true;
+      if (observers) {
+        var len = observers.length;
+        while (++index < len) {
+          observers[index].complete();
+        }
+      }
+      this.isUnsubscribed = false;
+      this.unsubscribe();
+    };
+    Subject.prototype.throwIfUnsubscribed = function() {
+      if (this.isUnsubscribed) {
+        throwError_1.throwError(new ObjectUnsubscribedError_1.ObjectUnsubscribedError());
+      }
+    };
+    Subject.prototype[rxSubscriber_1.$$rxSubscriber] = function() {
+      return new Subscriber_1.Subscriber(this);
+    };
     Subject.create = function(destination, source) {
-      return new AnonymousSubject(destination, source);
+      return new Subject(destination, source);
     };
     return Subject;
   }(Observable_1.Observable));
   exports.Subject = Subject;
-  var AnonymousSubject = (function(_super) {
-    __extends(AnonymousSubject, _super);
-    function AnonymousSubject(destination, source) {
+  var SubjectObservable = (function(_super) {
+    __extends(SubjectObservable, _super);
+    function SubjectObservable(source) {
       _super.call(this);
-      this.destination = destination;
       this.source = source;
     }
-    AnonymousSubject.prototype.next = function(value) {
-      var destination = this.destination;
-      if (destination && destination.next) {
-        destination.next(value);
-      }
-    };
-    AnonymousSubject.prototype.error = function(err) {
-      var destination = this.destination;
-      if (destination && destination.error) {
-        this.destination.error(err);
-      }
-    };
-    AnonymousSubject.prototype.complete = function() {
-      var destination = this.destination;
-      if (destination && destination.complete) {
-        this.destination.complete();
-      }
-    };
-    AnonymousSubject.prototype._subscribe = function(subscriber) {
-      var source = this.source;
-      if (source) {
-        return this.source.subscribe(subscriber);
-      } else {
-        return Subscription_1.Subscription.EMPTY;
-      }
-    };
-    return AnonymousSubject;
-  }(Subject));
-  exports.AnonymousSubject = AnonymousSubject;
+    return SubjectObservable;
+  }(Observable_1.Observable));
   global.define = __define;
   return module.exports;
 });
@@ -14357,7 +11517,7 @@ System.register("rxjs/add/operator/subscribeOn", ["rxjs/Observable", "rxjs/opera
   return module.exports;
 });
 
-System.register("rxjs/Rx", ["rxjs/Subject", "rxjs/Observable", "rxjs/add/observable/bindCallback", "rxjs/add/observable/bindNodeCallback", "rxjs/add/observable/combineLatest", "rxjs/add/observable/concat", "rxjs/add/observable/defer", "rxjs/add/observable/empty", "rxjs/add/observable/forkJoin", "rxjs/add/observable/from", "rxjs/add/observable/fromEvent", "rxjs/add/observable/fromEventPattern", "rxjs/add/observable/fromPromise", "rxjs/add/observable/generate", "rxjs/add/observable/if", "rxjs/add/observable/interval", "rxjs/add/observable/merge", "rxjs/add/observable/race", "rxjs/add/observable/never", "rxjs/add/observable/of", "rxjs/add/observable/onErrorResumeNext", "rxjs/add/observable/range", "rxjs/add/observable/using", "rxjs/add/observable/throw", "rxjs/add/observable/timer", "rxjs/add/observable/zip", "rxjs/add/observable/dom/ajax", "rxjs/add/observable/dom/webSocket", "rxjs/add/operator/buffer", "rxjs/add/operator/bufferCount", "rxjs/add/operator/bufferTime", "rxjs/add/operator/bufferToggle", "rxjs/add/operator/bufferWhen", "rxjs/add/operator/cache", "rxjs/add/operator/catch", "rxjs/add/operator/combineAll", "rxjs/add/operator/combineLatest", "rxjs/add/operator/concat", "rxjs/add/operator/concatAll", "rxjs/add/operator/concatMap", "rxjs/add/operator/concatMapTo", "rxjs/add/operator/count", "rxjs/add/operator/dematerialize", "rxjs/add/operator/debounce", "rxjs/add/operator/debounceTime", "rxjs/add/operator/defaultIfEmpty", "rxjs/add/operator/delay", "rxjs/add/operator/delayWhen", "rxjs/add/operator/distinct", "rxjs/add/operator/distinctKey", "rxjs/add/operator/distinctUntilChanged", "rxjs/add/operator/distinctUntilKeyChanged", "rxjs/add/operator/do", "rxjs/add/operator/exhaust", "rxjs/add/operator/exhaustMap", "rxjs/add/operator/expand", "rxjs/add/operator/elementAt", "rxjs/add/operator/filter", "rxjs/add/operator/finally", "rxjs/add/operator/find", "rxjs/add/operator/findIndex", "rxjs/add/operator/first", "rxjs/add/operator/groupBy", "rxjs/add/operator/ignoreElements", "rxjs/add/operator/isEmpty", "rxjs/add/operator/audit", "rxjs/add/operator/auditTime", "rxjs/add/operator/last", "rxjs/add/operator/let", "rxjs/add/operator/every", "rxjs/add/operator/map", "rxjs/add/operator/mapTo", "rxjs/add/operator/materialize", "rxjs/add/operator/max", "rxjs/add/operator/merge", "rxjs/add/operator/mergeAll", "rxjs/add/operator/mergeMap", "rxjs/add/operator/mergeMapTo", "rxjs/add/operator/mergeScan", "rxjs/add/operator/min", "rxjs/add/operator/multicast", "rxjs/add/operator/observeOn", "rxjs/add/operator/onErrorResumeNext", "rxjs/add/operator/pairwise", "rxjs/add/operator/partition", "rxjs/add/operator/pluck", "rxjs/add/operator/publish", "rxjs/add/operator/publishBehavior", "rxjs/add/operator/publishReplay", "rxjs/add/operator/publishLast", "rxjs/add/operator/race", "rxjs/add/operator/reduce", "rxjs/add/operator/repeat", "rxjs/add/operator/retry", "rxjs/add/operator/retryWhen", "rxjs/add/operator/sample", "rxjs/add/operator/sampleTime", "rxjs/add/operator/scan", "rxjs/add/operator/share", "rxjs/add/operator/single", "rxjs/add/operator/skip", "rxjs/add/operator/skipUntil", "rxjs/add/operator/skipWhile", "rxjs/add/operator/startWith", "rxjs/add/operator/subscribeOn", "rxjs/add/operator/switch", "rxjs/add/operator/switchMap", "rxjs/add/operator/switchMapTo", "rxjs/add/operator/take", "rxjs/add/operator/takeLast", "rxjs/add/operator/takeUntil", "rxjs/add/operator/takeWhile", "rxjs/add/operator/throttle", "rxjs/add/operator/throttleTime", "rxjs/add/operator/timeInterval", "rxjs/add/operator/timeout", "rxjs/add/operator/timeoutWith", "rxjs/add/operator/timestamp", "rxjs/add/operator/toArray", "rxjs/add/operator/toPromise", "rxjs/add/operator/window", "rxjs/add/operator/windowCount", "rxjs/add/operator/windowTime", "rxjs/add/operator/windowToggle", "rxjs/add/operator/windowWhen", "rxjs/add/operator/withLatestFrom", "rxjs/add/operator/zip", "rxjs/add/operator/zipAll", "rxjs/Operator", "rxjs/Subscription", "rxjs/Subscriber", "rxjs/AsyncSubject", "rxjs/ReplaySubject", "rxjs/BehaviorSubject", "rxjs/observable/MulticastObservable", "rxjs/observable/ConnectableObservable", "rxjs/Notification", "rxjs/util/EmptyError", "rxjs/util/ArgumentOutOfRangeError", "rxjs/util/ObjectUnsubscribedError", "rxjs/util/UnsubscriptionError", "rxjs/operator/timeInterval", "rxjs/operator/timestamp", "rxjs/testing/TestScheduler", "rxjs/scheduler/VirtualTimeScheduler", "rxjs/observable/dom/AjaxObservable", "rxjs/scheduler/asap", "rxjs/scheduler/async", "rxjs/scheduler/queue", "rxjs/scheduler/animationFrame", "rxjs/symbol/rxSubscriber", "rxjs/symbol/iterator", "symbol-observable"], true, function(require, exports, module) {
+System.register("rxjs/Rx", ["rxjs/Subject", "rxjs/Observable", "rxjs/add/observable/bindCallback", "rxjs/add/observable/bindNodeCallback", "rxjs/add/observable/combineLatest", "rxjs/add/observable/concat", "rxjs/add/observable/defer", "rxjs/add/observable/empty", "rxjs/add/observable/forkJoin", "rxjs/add/observable/from", "rxjs/add/observable/fromEvent", "rxjs/add/observable/fromEventPattern", "rxjs/add/observable/fromPromise", "rxjs/add/observable/interval", "rxjs/add/observable/merge", "rxjs/add/observable/race", "rxjs/add/observable/never", "rxjs/add/observable/of", "rxjs/add/observable/range", "rxjs/add/observable/throw", "rxjs/add/observable/timer", "rxjs/add/observable/zip", "rxjs/add/operator/buffer", "rxjs/add/operator/bufferCount", "rxjs/add/operator/bufferTime", "rxjs/add/operator/bufferToggle", "rxjs/add/operator/bufferWhen", "rxjs/add/operator/cache", "rxjs/add/operator/catch", "rxjs/add/operator/combineAll", "rxjs/add/operator/combineLatest", "rxjs/add/operator/concat", "rxjs/add/operator/concatAll", "rxjs/add/operator/concatMap", "rxjs/add/operator/concatMapTo", "rxjs/add/operator/count", "rxjs/add/operator/dematerialize", "rxjs/add/operator/debounce", "rxjs/add/operator/debounceTime", "rxjs/add/operator/defaultIfEmpty", "rxjs/add/operator/delay", "rxjs/add/operator/delayWhen", "rxjs/add/operator/distinctUntilChanged", "rxjs/add/operator/do", "rxjs/add/operator/expand", "rxjs/add/operator/filter", "rxjs/add/operator/finally", "rxjs/add/operator/first", "rxjs/add/operator/groupBy", "rxjs/add/operator/ignoreElements", "rxjs/add/operator/audit", "rxjs/add/operator/auditTime", "rxjs/add/operator/last", "rxjs/add/operator/let", "rxjs/add/operator/every", "rxjs/add/operator/map", "rxjs/add/operator/mapTo", "rxjs/add/operator/materialize", "rxjs/add/operator/merge", "rxjs/add/operator/mergeAll", "rxjs/add/operator/mergeMap", "rxjs/add/operator/mergeMapTo", "rxjs/add/operator/multicast", "rxjs/add/operator/observeOn", "rxjs/add/operator/partition", "rxjs/add/operator/pluck", "rxjs/add/operator/publish", "rxjs/add/operator/publishBehavior", "rxjs/add/operator/publishReplay", "rxjs/add/operator/publishLast", "rxjs/add/operator/race", "rxjs/add/operator/reduce", "rxjs/add/operator/repeat", "rxjs/add/operator/retry", "rxjs/add/operator/retryWhen", "rxjs/add/operator/sample", "rxjs/add/operator/sampleTime", "rxjs/add/operator/scan", "rxjs/add/operator/share", "rxjs/add/operator/single", "rxjs/add/operator/skip", "rxjs/add/operator/skipUntil", "rxjs/add/operator/skipWhile", "rxjs/add/operator/startWith", "rxjs/add/operator/subscribeOn", "rxjs/add/operator/switch", "rxjs/add/operator/switchMap", "rxjs/add/operator/switchMapTo", "rxjs/add/operator/take", "rxjs/add/operator/takeLast", "rxjs/add/operator/takeUntil", "rxjs/add/operator/takeWhile", "rxjs/add/operator/throttle", "rxjs/add/operator/throttleTime", "rxjs/add/operator/timeout", "rxjs/add/operator/timeoutWith", "rxjs/add/operator/toArray", "rxjs/add/operator/toPromise", "rxjs/add/operator/window", "rxjs/add/operator/windowCount", "rxjs/add/operator/windowTime", "rxjs/add/operator/windowToggle", "rxjs/add/operator/windowWhen", "rxjs/add/operator/withLatestFrom", "rxjs/add/operator/zip", "rxjs/add/operator/zipAll", "rxjs/Operator", "rxjs/Subscription", "rxjs/Subscriber", "rxjs/AsyncSubject", "rxjs/ReplaySubject", "rxjs/BehaviorSubject", "rxjs/observable/ConnectableObservable", "rxjs/Notification", "rxjs/util/EmptyError", "rxjs/util/ArgumentOutOfRangeError", "rxjs/util/ObjectUnsubscribedError", "rxjs/util/UnsubscriptionError", "rxjs/scheduler/asap", "rxjs/scheduler/async", "rxjs/scheduler/queue", "rxjs/symbol/rxSubscriber", "rxjs/symbol/observable", "rxjs/symbol/iterator"], true, function(require, exports, module) {
   var global = System.global,
       __define = global.define;
   global.define = undefined;
@@ -14377,21 +11537,15 @@ System.register("rxjs/Rx", ["rxjs/Subject", "rxjs/Observable", "rxjs/add/observa
   require("rxjs/add/observable/fromEvent");
   require("rxjs/add/observable/fromEventPattern");
   require("rxjs/add/observable/fromPromise");
-  require("rxjs/add/observable/generate");
-  require("rxjs/add/observable/if");
   require("rxjs/add/observable/interval");
   require("rxjs/add/observable/merge");
   require("rxjs/add/observable/race");
   require("rxjs/add/observable/never");
   require("rxjs/add/observable/of");
-  require("rxjs/add/observable/onErrorResumeNext");
   require("rxjs/add/observable/range");
-  require("rxjs/add/observable/using");
   require("rxjs/add/observable/throw");
   require("rxjs/add/observable/timer");
   require("rxjs/add/observable/zip");
-  require("rxjs/add/observable/dom/ajax");
-  require("rxjs/add/observable/dom/webSocket");
   require("rxjs/add/operator/buffer");
   require("rxjs/add/operator/bufferCount");
   require("rxjs/add/operator/bufferTime");
@@ -14412,23 +11566,14 @@ System.register("rxjs/Rx", ["rxjs/Subject", "rxjs/Observable", "rxjs/add/observa
   require("rxjs/add/operator/defaultIfEmpty");
   require("rxjs/add/operator/delay");
   require("rxjs/add/operator/delayWhen");
-  require("rxjs/add/operator/distinct");
-  require("rxjs/add/operator/distinctKey");
   require("rxjs/add/operator/distinctUntilChanged");
-  require("rxjs/add/operator/distinctUntilKeyChanged");
   require("rxjs/add/operator/do");
-  require("rxjs/add/operator/exhaust");
-  require("rxjs/add/operator/exhaustMap");
   require("rxjs/add/operator/expand");
-  require("rxjs/add/operator/elementAt");
   require("rxjs/add/operator/filter");
   require("rxjs/add/operator/finally");
-  require("rxjs/add/operator/find");
-  require("rxjs/add/operator/findIndex");
   require("rxjs/add/operator/first");
   require("rxjs/add/operator/groupBy");
   require("rxjs/add/operator/ignoreElements");
-  require("rxjs/add/operator/isEmpty");
   require("rxjs/add/operator/audit");
   require("rxjs/add/operator/auditTime");
   require("rxjs/add/operator/last");
@@ -14437,17 +11582,12 @@ System.register("rxjs/Rx", ["rxjs/Subject", "rxjs/Observable", "rxjs/add/observa
   require("rxjs/add/operator/map");
   require("rxjs/add/operator/mapTo");
   require("rxjs/add/operator/materialize");
-  require("rxjs/add/operator/max");
   require("rxjs/add/operator/merge");
   require("rxjs/add/operator/mergeAll");
   require("rxjs/add/operator/mergeMap");
   require("rxjs/add/operator/mergeMapTo");
-  require("rxjs/add/operator/mergeScan");
-  require("rxjs/add/operator/min");
   require("rxjs/add/operator/multicast");
   require("rxjs/add/operator/observeOn");
-  require("rxjs/add/operator/onErrorResumeNext");
-  require("rxjs/add/operator/pairwise");
   require("rxjs/add/operator/partition");
   require("rxjs/add/operator/pluck");
   require("rxjs/add/operator/publish");
@@ -14478,10 +11618,8 @@ System.register("rxjs/Rx", ["rxjs/Subject", "rxjs/Observable", "rxjs/add/observa
   require("rxjs/add/operator/takeWhile");
   require("rxjs/add/operator/throttle");
   require("rxjs/add/operator/throttleTime");
-  require("rxjs/add/operator/timeInterval");
   require("rxjs/add/operator/timeout");
   require("rxjs/add/operator/timeoutWith");
-  require("rxjs/add/operator/timestamp");
   require("rxjs/add/operator/toArray");
   require("rxjs/add/operator/toPromise");
   require("rxjs/add/operator/window");
@@ -14504,8 +11642,6 @@ System.register("rxjs/Rx", ["rxjs/Subject", "rxjs/Observable", "rxjs/add/observa
   exports.ReplaySubject = ReplaySubject_1.ReplaySubject;
   var BehaviorSubject_1 = require("rxjs/BehaviorSubject");
   exports.BehaviorSubject = BehaviorSubject_1.BehaviorSubject;
-  var MulticastObservable_1 = require("rxjs/observable/MulticastObservable");
-  exports.MulticastObservable = MulticastObservable_1.MulticastObservable;
   var ConnectableObservable_1 = require("rxjs/observable/ConnectableObservable");
   exports.ConnectableObservable = ConnectableObservable_1.ConnectableObservable;
   var Notification_1 = require("rxjs/Notification");
@@ -14518,35 +11654,21 @@ System.register("rxjs/Rx", ["rxjs/Subject", "rxjs/Observable", "rxjs/add/observa
   exports.ObjectUnsubscribedError = ObjectUnsubscribedError_1.ObjectUnsubscribedError;
   var UnsubscriptionError_1 = require("rxjs/util/UnsubscriptionError");
   exports.UnsubscriptionError = UnsubscriptionError_1.UnsubscriptionError;
-  var timeInterval_1 = require("rxjs/operator/timeInterval");
-  exports.TimeInterval = timeInterval_1.TimeInterval;
-  var timestamp_1 = require("rxjs/operator/timestamp");
-  exports.Timestamp = timestamp_1.Timestamp;
-  var TestScheduler_1 = require("rxjs/testing/TestScheduler");
-  exports.TestScheduler = TestScheduler_1.TestScheduler;
-  var VirtualTimeScheduler_1 = require("rxjs/scheduler/VirtualTimeScheduler");
-  exports.VirtualTimeScheduler = VirtualTimeScheduler_1.VirtualTimeScheduler;
-  var AjaxObservable_1 = require("rxjs/observable/dom/AjaxObservable");
-  exports.AjaxResponse = AjaxObservable_1.AjaxResponse;
-  exports.AjaxError = AjaxObservable_1.AjaxError;
-  exports.AjaxTimeoutError = AjaxObservable_1.AjaxTimeoutError;
   var asap_1 = require("rxjs/scheduler/asap");
   var async_1 = require("rxjs/scheduler/async");
   var queue_1 = require("rxjs/scheduler/queue");
-  var animationFrame_1 = require("rxjs/scheduler/animationFrame");
   var rxSubscriber_1 = require("rxjs/symbol/rxSubscriber");
+  var observable_1 = require("rxjs/symbol/observable");
   var iterator_1 = require("rxjs/symbol/iterator");
-  var observable = require("symbol-observable");
   var Scheduler = {
     asap: asap_1.asap,
     async: async_1.async,
-    queue: queue_1.queue,
-    animationFrame: animationFrame_1.animationFrame
+    queue: queue_1.queue
   };
   exports.Scheduler = Scheduler;
   var Symbol = {
     rxSubscriber: rxSubscriber_1.$$rxSubscriber,
-    observable: observable,
+    observable: observable_1.$$observable,
     iterator: iterator_1.$$iterator
   };
   exports.Symbol = Symbol;
