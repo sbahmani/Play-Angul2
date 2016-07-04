@@ -20,12 +20,12 @@ exports.routes = [
     },
     {
         path: 'detail/:id',
-        component: hero_detail_component_1.HeroDetailComponent,
-        canActivate: [auth_guard_1.AuthGuard]
+        component: hero_detail_component_1.HeroDetailComponent
     },
     {
         path: 'heroes',
         component: heroes_component_1.HeroesComponent,
+        canActivate: [auth_guard_1.AuthGuard]
     },
     {
         path: 'login',

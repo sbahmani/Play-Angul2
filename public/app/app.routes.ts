@@ -20,12 +20,12 @@ export const routes:RouterConfig = [
     },
     {
         path: 'detail/:id',
-        component: HeroDetailComponent,
-        canActivate: [AuthGuard]
+        component: HeroDetailComponent
     },
     {
         path: 'heroes',
         component: HeroesComponent,
+        canActivate: [AuthGuard]
     },
     {
         path: 'login',
