@@ -1,9 +1,10 @@
 package controllers;
 
+
+import jwt.RoleNeeded;
 import play.libs.Json;
 import play.mvc.Result;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -77,7 +78,9 @@ public class HeroRest extends play.mvc.Controller {
         }
     }
 
+    @RoleNeeded({"admin", "salam"})
     public Result getHeroes() {
+        System.out.println("2");
         return ok(Json.toJson(heroSet));
     }
 
