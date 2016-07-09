@@ -8,6 +8,8 @@ GET           /heroes              controllers.HeroRest.getHeroes
 PUT           /heroes/:id          controllers.HeroRest.editHeroes(id:String)
 DELETE        /heroes/:id          controllers.HeroRest.deleteHeroes(id:Integer)
 POST          /heroes              controllers.HeroRest.addHeroes
+POST          /login               jwt.Authorize.login
+GET           /logout              jwt.Authorize.logout
 
 
 # Map static resources from the /public folder to the /assets URL path
