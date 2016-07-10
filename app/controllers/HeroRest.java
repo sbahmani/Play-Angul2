@@ -78,7 +78,7 @@ public class HeroRest extends play.mvc.Controller {
         }
     }
 
-    @RoleNeeded({"admin", "user"})
+    @RoleNeeded({"admin"})
     public Result getHeroes() {
         System.out.println("2");
         return ok(Json.toJson(heroSet));

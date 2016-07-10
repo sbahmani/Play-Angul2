@@ -12,11 +12,14 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import static play.mvc.Controller.response;
 
 
 /**
@@ -37,11 +40,18 @@ public class RoleNeededAction extends Action<RoleNeeded> {
             Map<String, Object> verify = verifier.verify(cookie.value());
             HashSet<String> audience = Json.fromJson(Json.parse(verify.get("audience").toString()), HashSet.class);
 
-            System.out.println(verify);
+            Set<String> roleNeeded = new HashSet<>(Arrays.asList(configuration.value()));
+
+            if (!roleNeeded.isEmpty()) {
+                roleNeeded.retainAll(audience);
+                if (roleNeeded.isEmpty()) {
+                    return CompletableFuture.supplyAsync(() -> forbidden());
+                }
+            }
         } catch (InvalidKeyException | IOException | SignatureException | JWTVerifyException | NoSuchAlgorithmException e) {
+            response().discardCookie("token");
             return CompletableFuture.supplyAsync(() -> unauthorized());
         }
-//        String s = configuration.value()[1];
         CompletionStage<Result> call = delegate.call(ctx);
         return call;
     }
