@@ -4,7 +4,7 @@
 import {Component} from "@angular/core";
 import {HeroService} from "./hero.service";
 import {ROUTER_DIRECTIVES} from "@angular/router";
-
+import {AuthService} from "./auth.service";
 
 
 @Component({
@@ -15,6 +15,7 @@ import {ROUTER_DIRECTIVES} from "@angular/router";
   <nav>
       <a [routerLink]="['/dashboard']" routerLinkActive="active">Dashboard</a>
       <a [routerLink]="['/heroes']" routerLinkActive="active">Heroes</a>
+       <a (click)="logout()" *ngIf="authService.isLoggedIn">Logout</a>
   </nav>
   <router-outlet></router-outlet>
 `,
@@ -25,5 +26,13 @@ import {ROUTER_DIRECTIVES} from "@angular/router";
     styleUrls: ['app.component.css']
 })
 export class AppComponent {
+    constructor(public authService:AuthService) {
+
+    }
+
+    logout() {
+        this.authService.logout();
+    }
+
     title = 'Tour of Heroes';
 }

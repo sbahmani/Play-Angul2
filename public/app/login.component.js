@@ -35,13 +35,19 @@ var LoginComponent = (function () {
             }
         });
     };
+    LoginComponent.prototype.ngOnInit = function () {
+        if (this.authService.isLoggedIn) {
+            this.router.navigate(['/']);
+        }
+    };
     LoginComponent.prototype.logout = function () {
         this.authService.logout();
         this.setMessage();
     };
     LoginComponent = __decorate([
         core_1.Component({
-            template: "\n    <h2>LOGIN</h2>\n    <p>{{message}}</p>\n    <p>\n      <button (click)=\"login()\"  *ngIf=\"!authService.isLoggedIn\">Login</button>\n      <button (click)=\"logout()\" *ngIf=\"authService.isLoggedIn\">Logout</button>\n    </p>"
+            template: "\n    <h2>LOGIN</h2>\n    <p>{{message}}</p>\n    <div>\n        <label>username: </label>\n        <input type=\"text\" [(ngModel)]=\"username\" placeholder=\"username\"/>\n    </div>\n    <div>\n        <label>password: </label>\n        <input type=\"password\" [(ngModel)]=\"password\" placeholder=\"password\"/>\n    </div>\n    <p>\n      <button (click)=\"login()\"  *ngIf=\"!authService.isLoggedIn\">Login</button>\n      <button (click)=\"logout()\" *ngIf=\"authService.isLoggedIn\">Logout</button>\n    </p>",
+            styles: ["\n    input {\n    height: 2em;\n    margin-top: 1em;\n    font-size: 1em;\n    padding-left: .4em;\n    }\n    "]
         }), 
         __metadata('design:paramtypes', [auth_service_1.AuthService, router_1.Router])
     ], LoginComponent);

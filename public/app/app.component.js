@@ -14,22 +14,27 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var core_1 = require("@angular/core");
 var hero_service_1 = require("./hero.service");
 var router_1 = require("@angular/router");
+var auth_service_1 = require("./auth.service");
 var AppComponent = (function () {
-    function AppComponent() {
+    function AppComponent(authService) {
+        this.authService = authService;
         this.title = 'Tour of Heroes';
     }
+    AppComponent.prototype.logout = function () {
+        this.authService.logout();
+    };
     AppComponent = __decorate([
         core_1.Component({
             selector: 'my-app',
             moduleId: module.id,
-            template: "\n     <h1>{{title}}</h1>\n  <nav>\n      <a [routerLink]=\"['/dashboard']\" routerLinkActive=\"active\">Dashboard</a>\n      <a [routerLink]=\"['/heroes']\" routerLinkActive=\"active\">Heroes</a>\n  </nav>\n  <router-outlet></router-outlet>\n",
+            template: "\n     <h1>{{title}}</h1>\n  <nav>\n      <a [routerLink]=\"['/dashboard']\" routerLinkActive=\"active\">Dashboard</a>\n      <a [routerLink]=\"['/heroes']\" routerLinkActive=\"active\">Heroes</a>\n       <a (click)=\"logout()\" *ngIf=\"authService.isLoggedIn\">Logout</a>\n  </nav>\n  <router-outlet></router-outlet>\n",
             directives: [router_1.ROUTER_DIRECTIVES],
             providers: [
                 hero_service_1.HeroService
             ],
             styleUrls: ['app.component.css']
         }), 
-        __metadata('design:paramtypes', [])
+        __metadata('design:paramtypes', [auth_service_1.AuthService])
     ], AppComponent);
     return AppComponent;
 }());
