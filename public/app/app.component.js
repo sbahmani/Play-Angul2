@@ -21,7 +21,7 @@ var AppComponent = (function () {
         this.title = 'Tour of Heroes';
     }
     AppComponent.prototype.logout = function () {
-        this.authService.logout();
+        this.authService.logout().then();
     };
     AppComponent = __decorate([
         core_1.Component({

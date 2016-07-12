@@ -17,8 +17,8 @@ public class Authorize extends Controller {
 
 
     public Result login() {
-        String username = request().body().asFormUrlEncoded().get("username")[0];
-        String password = request().body().asFormUrlEncoded().get("password")[0];
+        String username = request().body().asJson().get("username").asText();
+        String password = request().body().asJson().get("password").asText();
         User loadedUser = User.ALL_USERS().get(username);
         if (loadedUser == null || !loadedUser.getPassword().equals(password)) {
             return unauthorized("wrong password");

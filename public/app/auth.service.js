@@ -12,24 +12,50 @@ var __metadata = (this && this.__metadata) || function (k, v) {
  * Created by sjb on 04/07/16.
  */
 var core_1 = require("@angular/core");
-var Observable_1 = require("rxjs/Observable");
-require("rxjs/add/observable/of");
-require("rxjs/add/operator/do");
-require("rxjs/add/operator/delay");
+var http_1 = require("@angular/http");
+require("rxjs/add/operator/toPromise");
 var AuthService = (function () {
-    function AuthService() {
+    function AuthService(http) {
+        this.http = http;
         this.isLoggedIn = false;
+        this.roles = [];
     }
-    AuthService.prototype.login = function () {
-        var _this = this;
-        return Observable_1.Observable.of(true).delay(1000).do(function (val) { return _this.isLoggedIn = true; });
+    AuthService.prototype.login = function (username, password) {
+        //return Observable.of(true).delay(1000).do(val => this.isLoggedIn = true);
+        var headers = new http_1.Headers({
+            'Content-Type': 'application/json'
+        });
+        return this.http.post("/login", JSON.stringify({
+            username: username,
+            password: password
+        }), { headers: headers })
+            .toPromise()
+            .then(function (res) {
+            console.log(res);
+            return res;
+        })
+            .catch(function (e) {
+            console.info("service " + e);
+            return e;
+        });
     };
     AuthService.prototype.logout = function () {
-        this.isLoggedIn = false;
+        var _this = this;
+        return this.http.get("/logout")
+            .toPromise()
+            .then(function (res) {
+            _this.isLoggedIn = false;
+            _this.roles = [];
+            return res;
+        })
+            .catch(function (e) {
+            console.info("service " + e);
+            return e;
+        });
     };
     AuthService = __decorate([
         core_1.Injectable(), 
-        __metadata('design:paramtypes', [])
+        __metadata('design:paramtypes', [http_1.Http])
     ], AuthService);
     return AuthService;
 }());

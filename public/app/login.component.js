@@ -26,13 +26,16 @@ var LoginComponent = (function () {
     LoginComponent.prototype.login = function () {
         var _this = this;
         this.message = 'Trying to log in ...';
-        this.authService.login().subscribe(function () {
+        this.authService.login(this.username, this.password).then(function (res) {
+            console.log(res);
             _this.setMessage();
-            if (_this.authService.isLoggedIn) {
-                // Todo: capture where the user was going and nav there.
-                // Meanwhile redirect the user to the crisis admin
-                _this.router.navigate(['/dashboard']);
-            }
+            _this.authService.isLoggedIn = true;
+            _this.authService.roles = res.json();
+            _this.router.navigate(['/dashboard']);
+        }).catch(function (error) {
+            _this.authService.isLoggedIn = false;
+            _this.authService.roles = [];
+            console.info("login " + error);
         });
     };
     LoginComponent.prototype.ngOnInit = function () {
@@ -41,12 +44,14 @@ var LoginComponent = (function () {
         }
     };
     LoginComponent.prototype.logout = function () {
-        this.authService.logout();
-        this.setMessage();
+        var _this = this;
+        this.authService.logout().then(function (res) {
+            _this.setMessage();
+        });
     };
     LoginComponent = __decorate([
         core_1.Component({
-            template: "\n    <h2>LOGIN</h2>\n    <p>{{message}}</p>\n    <div>\n        <label>username: </label>\n        <input type=\"text\" [(ngModel)]=\"username\" placeholder=\"username\"/>\n    </div>\n    <div>\n        <label>password: </label>\n        <input type=\"password\" [(ngModel)]=\"password\" placeholder=\"password\"/>\n    </div>\n    <p>\n      <button (click)=\"login()\"  *ngIf=\"!authService.isLoggedIn\">Login</button>\n      <button (click)=\"logout()\" *ngIf=\"authService.isLoggedIn\">Logout</button>\n    </p>",
+            template: "\n    <h2>LOGIN</h2>\n    <p>{{message}}</p>\n    <div>\n        <label>username: </label>\n        <input type=\"text\" [(ngModel)]=\"username\" placeholder=\"username\" required/>\n    </div>\n    <div>\n        <label>password: </label>\n        <input type=\"password\" [(ngModel)]=\"password\" placeholder=\"password\" required/>\n    </div>\n    <p>\n      <button (click)=\"login()\"  *ngIf=\"!authService.isLoggedIn\">Login</button>\n      <button (click)=\"logout()\" *ngIf=\"authService.isLoggedIn\">Logout</button>\n    </p>",
             styles: ["\n    input {\n    height: 2em;\n    margin-top: 1em;\n    font-size: 1em;\n    padding-left: .4em;\n    }\n    "]
         }), 
         __metadata('design:paramtypes', [auth_service_1.AuthService, router_1.Router])

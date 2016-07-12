@@ -4,17 +4,18 @@
 import {Component, OnInit} from "@angular/core";
 import {Router} from "@angular/router";
 import {AuthService} from "./auth.service";
+
 @Component({
     template: `
     <h2>LOGIN</h2>
     <p>{{message}}</p>
     <div>
         <label>username: </label>
-        <input type="text" [(ngModel)]="username" placeholder="username"/>
+        <input type="text" [(ngModel)]="username" placeholder="username" required/>
     </div>
     <div>
         <label>password: </label>
-        <input type="password" [(ngModel)]="password" placeholder="password"/>
+        <input type="password" [(ngModel)]="password" placeholder="password" required/>
     </div>
     <p>
       <button (click)="login()"  *ngIf="!authService.isLoggedIn">Login</button>
@@ -45,13 +46,19 @@ export class LoginComponent implements OnInit {
 
     login() {
         this.message = 'Trying to log in ...';
-        this.authService.login().subscribe(() => {
-            this.setMessage();
-            if (this.authService.isLoggedIn) {
-                // Todo: capture where the user was going and nav there.
-                // Meanwhile redirect the user to the crisis admin
+        this.authService.login(this.username, this.password).then
+        (
+            res => {
+                console.log(res);
+                this.setMessage();
+                this.authService.isLoggedIn = true;
+                this.authService.roles = res.json();
                 this.router.navigate(['/dashboard']);
             }
+        ).catch(error => {
+            this.authService.isLoggedIn = false;
+            this.authService.roles = [];
+            console.info("login " + error)
         });
     }
 
@@ -62,7 +69,10 @@ export class LoginComponent implements OnInit {
     }
 
     logout() {
-        this.authService.logout();
-        this.setMessage();
+        this.authService.logout().then(
+            res => {
+                this.setMessage();
+            }
+        );
     }
 }
