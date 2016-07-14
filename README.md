@@ -7,7 +7,7 @@ We integrate these two platform(Angular2 as frontend and Play! for backend)
 
 ## Version
 * Play Framework : 2.5.4
-* Angular : 2.0.0-rc.3
+* Angular : 2.0.0-rc.4
 
 ## Installation and Run
 * install nodejs (https://docs.npmjs.com/getting-started/installing-node)
