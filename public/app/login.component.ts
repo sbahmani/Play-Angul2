@@ -37,27 +37,21 @@ export class LoginComponent implements OnInit {
     password:string
 
     constructor(public authService:AuthService, public router:Router) {
-        this.setMessage();
+
     }
 
-    setMessage() {
-        this.message = 'Logged ' + (this.authService.isLoggedIn ? 'in' : 'out');
-    }
 
     login() {
-        this.message = 'Trying to log in ...';
+        this.message = '';
         this.authService.login(this.username, this.password).then
         (
             res => {
-                console.log(res);
-                this.setMessage();
-                this.authService.isLoggedIn = true;
-                this.authService.roles = res.json();
-                this.router.navigate(['/dashboard']);
+                if (res.status == 200)
+                    this.router.navigate(['/dashboard']);
+                else
+                    this.message = "wrong username or password"
             }
         ).catch(error => {
-            this.authService.isLoggedIn = false;
-            this.authService.roles = [];
             console.info("login " + error)
         });
     }
@@ -71,7 +65,7 @@ export class LoginComponent implements OnInit {
     logout() {
         this.authService.logout().then(
             res => {
-                this.setMessage();
+                this.message = "logged out"
             }
         );
     }

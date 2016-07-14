@@ -10,6 +10,7 @@ DELETE        /heroes/:id          controllers.HeroRest.deleteHeroes(id:Integer)
 POST          /heroes              controllers.HeroRest.addHeroes
 POST          /login               jwt.Authorize.login
 GET           /logout              jwt.Authorize.logout
+GET           /authorize           jwt.Authorize.authorize
 
 
 # Map static resources from the /public folder to the /assets URL path

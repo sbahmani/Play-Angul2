@@ -7,6 +7,7 @@ import "rxjs/add/operator/toPromise";
 
 @Injectable()
 export class AuthService {
+
     isLoggedIn:boolean = false;
     roles:string[] = [];
 
@@ -22,12 +23,15 @@ export class AuthService {
             }), {headers: headers})
             .toPromise()
             .then(res => {
-                console.log(res);
+                this.isLoggedIn = true;
+                this.roles = res.json();
                 return res
             })
             .catch(e => {
-                console.info("service " + e)
-                return e
+                console.info("111")
+                this.isLoggedIn = false;
+                this.roles = [];
+                return e;
             });
     }
 
@@ -46,6 +50,16 @@ export class AuthService {
     }
 
     constructor(private http:Http) {
+        console.log("start authorize");
+        this.http.get("/authorize")
+            .toPromise()
+            .then(res=> {
+                this.isLoggedIn = true;
+                this.roles = res.json();
+            })
+            .catch(err => {
+                console.log(err);
+            });
     }
 
 }

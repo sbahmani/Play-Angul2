@@ -16,7 +16,7 @@ var hero_service_1 = require("./hero.service");
 var router_1 = require("@angular/router");
 var auth_service_1 = require("./auth.service");
 var AppComponent = (function () {
-    function AppComponent(authService) {
+    function AppComponent(authService, heros) {
         this.authService = authService;
         this.title = 'Tour of Heroes';
     }
@@ -34,7 +34,7 @@ var AppComponent = (function () {
             ],
             styleUrls: ['app.component.css']
         }), 
-        __metadata('design:paramtypes', [auth_service_1.AuthService])
+        __metadata('design:paramtypes', [auth_service_1.AuthService, hero_service_1.HeroService])
     ], AppComponent);
     return AppComponent;
 }());

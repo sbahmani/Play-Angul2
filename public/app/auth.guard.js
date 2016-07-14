@@ -15,6 +15,7 @@ var AuthGuard = (function () {
     function AuthGuard(authService, router) {
         this.authService = authService;
         this.router = router;
+        console.log("pppppp");
     }
     AuthGuard.prototype.canActivate = function (// Not using but worth knowing about
         next, state) {

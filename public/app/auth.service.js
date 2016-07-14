@@ -16,11 +16,23 @@ var http_1 = require("@angular/http");
 require("rxjs/add/operator/toPromise");
 var AuthService = (function () {
     function AuthService(http) {
+        var _this = this;
         this.http = http;
         this.isLoggedIn = false;
         this.roles = [];
+        console.log("start authorize");
+        this.http.get("/authorize")
+            .toPromise()
+            .then(function (res) {
+            _this.isLoggedIn = true;
+            _this.roles = res.json();
+        })
+            .catch(function (err) {
+            console.log(err);
+        });
     }
     AuthService.prototype.login = function (username, password) {
+        var _this = this;
         //return Observable.of(true).delay(1000).do(val => this.isLoggedIn = true);
         var headers = new http_1.Headers({
             'Content-Type': 'application/json'
@@ -31,11 +43,14 @@ var AuthService = (function () {
         }), { headers: headers })
             .toPromise()
             .then(function (res) {
-            console.log(res);
+            _this.isLoggedIn = true;
+            _this.roles = res.json();
             return res;
         })
             .catch(function (e) {
-            console.info("service " + e);
+            console.info("111");
+            _this.isLoggedIn = false;
+            _this.roles = [];
             return e;
         });
     };

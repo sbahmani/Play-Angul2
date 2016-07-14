@@ -18,23 +18,16 @@ var LoginComponent = (function () {
     function LoginComponent(authService, router) {
         this.authService = authService;
         this.router = router;
-        this.setMessage();
     }
-    LoginComponent.prototype.setMessage = function () {
-        this.message = 'Logged ' + (this.authService.isLoggedIn ? 'in' : 'out');
-    };
     LoginComponent.prototype.login = function () {
         var _this = this;
-        this.message = 'Trying to log in ...';
+        this.message = '';
         this.authService.login(this.username, this.password).then(function (res) {
-            console.log(res);
-            _this.setMessage();
-            _this.authService.isLoggedIn = true;
-            _this.authService.roles = res.json();
-            _this.router.navigate(['/dashboard']);
+            if (res.status == 200)
+                _this.router.navigate(['/dashboard']);
+            else
+                _this.message = "wrong username or password";
         }).catch(function (error) {
-            _this.authService.isLoggedIn = false;
-            _this.authService.roles = [];
             console.info("login " + error);
         });
     };
@@ -46,7 +39,7 @@ var LoginComponent = (function () {
     LoginComponent.prototype.logout = function () {
         var _this = this;
         this.authService.logout().then(function (res) {
-            _this.setMessage();
+            _this.message = "logged out";
         });
     };
     LoginComponent = __decorate([
