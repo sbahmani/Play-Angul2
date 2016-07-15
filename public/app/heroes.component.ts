@@ -3,6 +3,7 @@ import {Router}            from '@angular/router';
 import {Hero} from "./hero";
 import {HeroService} from "./hero.service";
 import {HeroDetailComponent} from "./hero-detail.component";
+import {AuthService} from "./auth.service";
 
 @Component({
     selector: 'my-heroes',
@@ -17,8 +18,12 @@ export class HeroesComponent implements OnInit {
     addingHero = false;
     error:any;
 
+    checkRoles():boolean {
+        return this.authservice.roleContain('admin')
+    }
+
     constructor(private router:Router,
-                private heroService:HeroService) {
+                private heroService:HeroService, private authservice:AuthService) {
     }
 
     getHeroes() {

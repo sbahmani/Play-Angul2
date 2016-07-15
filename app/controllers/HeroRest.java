@@ -2,6 +2,7 @@ package controllers;
 
 
 import jwt.RoleNeeded;
+import org.springframework.context.annotation.Role;
 import play.libs.Json;
 import play.mvc.Result;
 
@@ -78,13 +79,13 @@ public class HeroRest extends play.mvc.Controller {
         }
     }
 
-//    @RoleNeeded({"admin","user"})
+
+    @RoleNeeded({"user"})
     public Result getHeroes() {
-        System.out.println("2");
         return ok(Json.toJson(heroSet));
     }
 
-//    @RoleNeeded({"admin","user"})
+    @RoleNeeded({"admin", "user"})
     public Result editHeroes(String id) {
         Hero hero = Json.fromJson(request().body().asJson(), Hero.class);
         Hero heroInSet;
@@ -93,12 +94,14 @@ public class HeroRest extends play.mvc.Controller {
         return ok(Json.toJson(hero));
     }
 
+    @RoleNeeded({"admin"})
     public Result deleteHeroes(Integer id) {
 
         heroSet.remove(heroSet.stream().filter(he -> he.id == id).findAny().get());
         return ok(Json.toJson(id));
     }
 
+    @RoleNeeded({"admin"})
     public Result addHeroes() {
         Hero hero = Json.fromJson(request().body().asJson(), Hero.class);
         hero.setId(heroSet.stream().max((h1, h2) -> Integer.compare(h1.id, h2.id)).get().getId() + 1);

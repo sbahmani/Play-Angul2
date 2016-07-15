@@ -12,12 +12,17 @@ var core_1 = require("@angular/core");
 var router_1 = require('@angular/router');
 var hero_service_1 = require("./hero.service");
 var hero_detail_component_1 = require("./hero-detail.component");
+var auth_service_1 = require("./auth.service");
 var HeroesComponent = (function () {
-    function HeroesComponent(router, heroService) {
+    function HeroesComponent(router, heroService, authservice) {
         this.router = router;
         this.heroService = heroService;
+        this.authservice = authservice;
         this.addingHero = false;
     }
+    HeroesComponent.prototype.checkRoles = function () {
+        return this.authservice.roleContain('admin');
+    };
     HeroesComponent.prototype.getHeroes = function () {
         var _this = this;
         this.heroService
@@ -67,7 +72,7 @@ var HeroesComponent = (function () {
             moduleId: module.id,
             directives: [hero_detail_component_1.HeroDetailComponent]
         }), 
-        __metadata('design:paramtypes', [router_1.Router, hero_service_1.HeroService])
+        __metadata('design:paramtypes', [router_1.Router, hero_service_1.HeroService, auth_service_1.AuthService])
     ], HeroesComponent);
     return HeroesComponent;
 }());

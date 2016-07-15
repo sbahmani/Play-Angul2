@@ -5,8 +5,10 @@ import {provideRouter, RouterConfig} from "@angular/router";
 import {DashboardComponent} from "./dashboard.component";
 import {HeroesComponent} from "./heroes.component";
 import {HeroDetailComponent} from "./hero-detail.component";
-import {AuthGuard} from "./auth.guard";
 import {LoginComponent} from "./login.component";
+import {UserGuard} from "./guard/user.guard";
+import {AdminGuard} from "./guard/admin.guard";
+import {AuthOnlyGuard} from "./guard/auth.only.guard";
 
 export const routes:RouterConfig = [
     {
@@ -20,12 +22,14 @@ export const routes:RouterConfig = [
     },
     {
         path: 'detail/:id',
-        component: HeroDetailComponent
+        component: HeroDetailComponent,
+        canActivate: [AdminGuard]
+
     },
     {
         path: 'heroes',
         component: HeroesComponent,
-        canActivate: [AuthGuard]
+        canActivate: [UserGuard]
     },
     {
         path: 'login',
@@ -34,5 +38,8 @@ export const routes:RouterConfig = [
 ];
 
 export const APP_ROUTER_PROVIDERS = [
-    provideRouter(routes)
+    provideRouter(routes),
+    AdminGuard,
+    UserGuard,
+    AuthOnlyGuard,
 ];

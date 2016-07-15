@@ -3,6 +3,7 @@
  */
 import {Injectable} from "@angular/core";
 import {Http, Headers} from "@angular/http";
+import {Router} from "@angular/router";
 import "rxjs/add/operator/toPromise";
 
 @Injectable()
@@ -41,6 +42,7 @@ export class AuthService {
             .then(res => {
                 this.isLoggedIn = false;
                 this.roles = [];
+                this.router.navigate(['/']);
                 return res;
             })
             .catch(e => {
@@ -49,7 +51,12 @@ export class AuthService {
             });
     }
 
-    constructor(private http:Http) {
+    roleContain(role:string):boolean {
+        return this.roles.indexOf(role) > -1;
+    }
+
+
+    constructor(private http:Http, private router:Router) {
         console.log("start authorize");
         this.http.get("/authorize")
             .toPromise()

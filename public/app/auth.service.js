@@ -13,11 +13,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
  */
 var core_1 = require("@angular/core");
 var http_1 = require("@angular/http");
+var router_1 = require("@angular/router");
 require("rxjs/add/operator/toPromise");
 var AuthService = (function () {
-    function AuthService(http) {
+    function AuthService(http, router) {
         var _this = this;
         this.http = http;
+        this.router = router;
         this.isLoggedIn = false;
         this.roles = [];
         console.log("start authorize");
@@ -61,6 +63,7 @@ var AuthService = (function () {
             .then(function (res) {
             _this.isLoggedIn = false;
             _this.roles = [];
+            _this.router.navigate(['/']);
             return res;
         })
             .catch(function (e) {
@@ -68,9 +71,12 @@ var AuthService = (function () {
             return e;
         });
     };
+    AuthService.prototype.roleContain = function (role) {
+        return this.roles.indexOf(role) > -1;
+    };
     AuthService = __decorate([
         core_1.Injectable(), 
-        __metadata('design:paramtypes', [http_1.Http])
+        __metadata('design:paramtypes', [http_1.Http, router_1.Router])
     ], AuthService);
     return AuthService;
 }());
