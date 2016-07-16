@@ -10,8 +10,9 @@ We integrate these two platform(Angular2 as frontend and Play! for backend)
 * Angular : 2.0.0-rc.4
 
 ## Installation and Run
-* install nodejs (https://docs.npmjs.com/getting-started/installing-node)
+* install nodejs and typescript (https://docs.npmjs.com/getting-started/installing-node)
 * use [Activator](https://www.lightbend.com/activator/download) for build Play Framework app and just `activator run`
+* for compile typescript files run `tsc -w` in public folder
 
 ## REST Services
 REST Services can accessed from app/controllers/HeroRest.java
